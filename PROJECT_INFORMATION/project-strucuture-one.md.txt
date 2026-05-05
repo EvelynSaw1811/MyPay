@@ -1,0 +1,671 @@
+# EnPay E-Wallet System - Project Framework & Architecture Analysis
+
+## 1. Project Overview
+
+**Project Name:** EnPay E-Wallet System  
+**Group ID:** `com.enpay`  
+**Artifact ID:** `enpay`  
+**Version:** `0.0.1-SNAPSHOT`  
+**Packaging:** Multi-module Maven POM  
+**Description:** Secure Distributed Microservice-Based E-Wallet System  
+
+EnPay is a microservice-based digital wallet platform built with Spring Boot 3.4.5 and Spring Cloud 2024.0.1. It supports multi-currency wallets, collaborative expense collections with advanced bill-splitting algorithms, settlement and netting transactions, exchange rate management, notifications, and reporting dashboards.
+
+---
+
+## 2. Technology Stack
+
+### 2.1 Core Framework
+| Component | Technology | Version |
+|---|---|---|
+| Language | Java | 17 |
+| Framework | Spring Boot | 3.4.5 |
+| Cloud Framework | Spring Cloud | 2024.0.1 |
+| Build Tool | Apache Maven | Wrapper included (mvnw) |
+| JDK Runtime | Eclipse Temurin | 17-jre-alpine (Docker) |
+
+### 2.2 Spring Cloud Components
+| Component | Purpose |
+|---|---|
+| Spring Cloud Config Server | Centralized configuration management (native file-based) |
+| Netflix Eureka Server/Client | Service discovery and registry |
+| Spring Cloud Gateway | API gateway with reactive routing |
+| Spring Cloud OpenFeign | Declarative REST client for inter-service communication |
+| Resilience4j (Circuit Breaker, Retry, Time Limiter) | Fault tolerance and resilience patterns |
+
+### 2.3 Data & Messaging
+| Component | Technology | Version |
+|---|---|---|
+| Relational Database | MySQL | 8.0 |
+| Caching | Redis | 7 (Alpine) |
+| Message Broker | RabbitMQ | 3 (Management Alpine) |
+| ORM | Hibernate / Spring Data JPA | (via Spring Boot) |
+
+### 2.4 Security
+| Component | Technology |
+|---|---|
+| Authentication | JWT (JSON Web Token) via `jjwt` library v0.12.6 |
+| Password Hashing | BCrypt (via Spring Security) |
+| Gateway Auth Filter | Custom `JwtAuthenticationFilter` in API Gateway |
+| Framework | Spring Security (stateless, CSRF disabled) |
+
+### 2.5 Libraries & Utilities
+| Library | Purpose |
+|---|---|
+| Lombok | Boilerplate reduction (@Builder, @Data, @Getter, @Setter, etc.) |
+| Jackson | JSON serialization/deserialization |
+| Jakarta Validation | Request DTO validation (@NotBlank, @Email, @Size, etc.) |
+| Spring AOP | Aspect-oriented role-based authorization in collection-service |
+
+### 2.6 Containerization & Deployment
+| Component | Technology |
+|---|---|
+| Containerization | Docker (per-service Dockerfile) |
+| Orchestration | Docker Compose (v3.8) |
+| Base Image | `eclipse-temurin:17-jre-alpine` |
+
+---
+
+## 3. Complete Project Directory Tree
+
+```
+enpay/                                          # Root multi-module Maven project
+|
+|-- pom.xml                                     # Parent POM (Spring Boot 3.4.5, Spring Cloud 2024.0.1)
+|-- docker-compose.yml                          # Full-stack orchestration (infrastructure + all services)
+|-- init-schemas.sql                            # MySQL database schema initialization (6 databases)
+|-- mvnw / mvnw.cmd                             # Maven wrapper scripts
+|-- .mvn/                                       # Maven wrapper configuration
+|-- .gitignore                                  # Git ignore rules
+|-- .gitattributes                              # Git attributes
+|-- .idea/                                      # IntelliJ IDEA project settings
+|-- erd-diagram.html                            # Entity-Relationship diagram (visual)
+|-- requirement_analysis.md                     # Detailed requirement analysis document
+|-- requirement_original.md                     # Original requirements document
+|-- requirement_original_research.md            # Original research document
+|-- requirement_overall_specification.md        # Overall specification document
+|
+|-- common-lib/                                 # [MODULE] Shared library (JAR, not bootable)
+|   |-- pom.xml
+|   |-- src/main/java/com/enpay/common/
+|       |-- constant/
+|       |   |-- CollectionCategory.java         # Enum: TRIP, EXPENSE, OTHER
+|       |   |-- CollectionRole.java             # Enum: ADMIN, EDITOR, MEMBER
+|       |   |-- CollectionStatus.java           # Enum: ACTIVE, CLOSED
+|       |   |-- Currency.java                   # Enum: MYR, SGD, USD (with displayName, code)
+|       |   |-- InvitationStatus.java           # Enum: PENDING, ACCEPTED, DECLINED
+|       |   |-- SplitType.java                  # Enum: EQUAL, PERCENTAGE, EXACT, HYBRID, HIERARCHICAL
+|       |   |-- TransactionStatus.java          # Enum: PENDING, COMPLETED, FAILED, REVERSED
+|       |   |-- TransactionType.java            # Enum: SETTLEMENT, TOP_UP, TRANSFER, NETTING
+|       |-- dto/
+|       |   |-- ApiResponse.java                # Generic API response wrapper (success/error/timestamp)
+|       |-- event/
+|       |   |-- NotificationEvent.java          # RabbitMQ notification event payload
+|       |   |-- RabbitMQConstants.java           # Exchange, queue, routing key constants
+|       |-- exception/
+|       |   |-- BaseException.java              # Abstract base exception with HttpStatus
+|       |   |-- BadRequestException.java        # 400 Bad Request
+|       |   |-- ConflictException.java          # 409 Conflict
+|       |   |-- DuplicateResourceException.java # 409 Conflict (duplicate)
+|       |   |-- ForbiddenException.java         # 403 Forbidden
+|       |   |-- InsufficientBalanceException.java # 422 Unprocessable Entity
+|       |   |-- ResourceNotFoundException.java  # 404 Not Found
+|       |   |-- UnauthorizedException.java      # 401 Unauthorized
+|       |   |-- GlobalExceptionHandler.java     # @RestControllerAdvice base handler
+|       |-- util/
+|           |-- MoneyUtil.java                  # BigDecimal arithmetic utilities (scale=4, HALF_UP)
+|           |-- NotificationHelper.java         # Fire-and-forget notification sender utility
+|
+|-- config-server/                              # [MODULE] Spring Cloud Config Server (port 8888)
+|   |-- pom.xml
+|   |-- Dockerfile
+|   |-- src/main/java/com/enpay/config/
+|   |   |-- ConfigServerApplication.java        # @EnableConfigServer
+|   |-- src/main/resources/
+|       |-- application.yml                     # Native profile, classpath:/configurations
+|       |-- configurations/
+|           |-- application.yml                 # Shared config (Eureka, RabbitMQ, Actuator, Resilience4j)
+|           |-- application-docker.yml          # Docker profile: service name overrides
+|           |-- api-gateway.yml                 # Gateway routes, CORS, rate limiting, JWT
+|           |-- api-gateway-docker.yml          # Redis host override for Docker
+|           |-- auth-service.yml                # Auth DB, JWT, OpenFeign CB
+|           |-- auth-service-docker.yml         # Auth DB host override
+|           |-- wallet-service.yml              # Wallet DB config
+|           |-- wallet-service-docker.yml       # Wallet DB host override
+|           |-- collection-service.yml          # Collection DB, OpenFeign CB
+|           |-- collection-service-docker.yml   # Collection DB host override
+|           |-- transaction-service.yml         # Transaction DB, Resilience4j CB instances
+|           |-- transaction-service-docker.yml  # Transaction DB host override
+|           |-- currency-service.yml            # Currency DB, Redis, Exchange Rate API
+|           |-- currency-service-docker.yml     # Currency DB & Redis host overrides
+|           |-- notification-service.yml        # Notification DB config
+|           |-- notification-service-docker.yml # Notification DB host override
+|           |-- discovery-server.yml            # Eureka server config
+|           |-- discovery-server-docker.yml     # Eureka hostname override
+|           |-- reporting-service.yml           # No DB, OpenFeign CB, time limiters
+|
+|-- discovery-server/                           # [MODULE] Eureka Service Registry (port 8761)
+|   |-- pom.xml
+|   |-- Dockerfile
+|   |-- src/main/java/com/enpay/discovery/
+|   |   |-- DiscoveryServerApplication.java     # @EnableEurekaServer
+|   |-- src/main/resources/
+|   |   |-- application.yml                     # Self-preservation disabled, standalone mode
+|   |-- src/test/java/com/enpay/discovery/
+|       |-- DiscoveryServerApplicationTests.java
+|
+|-- api-gateway/                                # [MODULE] Spring Cloud Gateway (port 8080)
+|   |-- pom.xml
+|   |-- Dockerfile
+|   |-- src/main/java/com/enpay/gateway/
+|   |   |-- ApiGatewayApplication.java          # @EnableDiscoveryClient
+|   |   |-- config/
+|   |   |   |-- GatewayRouteConfig.java         # Placeholder for programmatic routes
+|   |   |   |-- RateLimiterConfig.java          # Redis rate limiter key resolver (X-User-Id / IP)
+|   |   |-- filter/
+|   |   |   |-- JwtAuthenticationFilter.java    # Gateway filter: JWT validation, X-User-Id injection
+|   |   |-- util/
+|   |       |-- JwtUtil.java                    # JWT validation & userId extraction
+|   |-- src/main/resources/
+|   |   |-- application.yml                     # Gateway routes to all 7 business services
+|   |-- src/test/java/com/enpay/gateway/
+|       |-- ApiGatewayApplicationTests.java
+|
+|-- auth-service/                               # [MODULE] Authentication Service (port 8081)
+|   |-- pom.xml
+|   |-- Dockerfile
+|   |-- src/main/java/com/enpay/auth/
+|   |   |-- AuthServiceApplication.java         # @EnableDiscoveryClient, @EnableFeignClients
+|   |   |-- client/
+|   |   |   |-- WalletClient.java               # Feign client -> WALLET-SERVICE (auto-create wallet)
+|   |   |   |-- WalletClientFallbackFactory.java
+|   |   |-- config/
+|   |   |   |-- JwtConfig.java                  # JWT properties (secret, expiration, refreshExpiration)
+|   |   |   |-- JwtUtil.java                    # JWT generation (access + refresh tokens), validation
+|   |   |   |-- SecurityConfig.java             # Spring Security: stateless, /api/auth/** open
+|   |   |-- controller/
+|   |   |   |-- AuthController.java             # REST: register, login, refresh, logout, getUserById
+|   |   |-- dto/
+|   |   |   |-- AuthResponse.java               # accessToken, refreshToken, userId, email, name
+|   |   |   |-- LoginRequest.java               # email, password (validated)
+|   |   |   |-- RefreshTokenRequest.java        # refreshToken (validated)
+|   |   |   |-- RegisterRequest.java            # email, password(min 8), firstName, lastName, phone
+|   |   |   |-- UserResponse.java               # userId, email, firstName, lastName, status
+|   |   |-- entity/
+|   |   |   |-- User.java                       # USER_T: userId(UUID), email, phone, name, status, timestamps
+|   |   |   |-- UserCredential.java             # USER_CREDENTIAL_T: ucrdId(UUID), userId, passwordHash
+|   |   |-- exception/
+|   |   |   |-- AuthExceptionHandler.java       # Extends GlobalExceptionHandler
+|   |   |-- mapper/
+|   |   |   |-- UserMapper.java                 # RegisterRequest -> User, User -> UserResponse
+|   |   |-- repository/
+|   |   |   |-- UserCredentialRepository.java   # findByUcrdUserId
+|   |   |   |-- UserRepository.java             # findByUserEmail, existsByUserEmail
+|   |   |-- service/
+|   |       |-- AuthService.java                # Interface: register, login, refreshToken, getUserById
+|   |       |-- impl/
+|   |           |-- AuthServiceImpl.java        # Implementation with BCrypt, JWT, Feign wallet creation
+|   |-- src/main/resources/
+|   |   |-- application.yml                     # DB: ewallet_auth_db, JWT secret + expiration
+|   |-- src/test/java/com/enpay/auth/
+|       |-- AuthServiceApplicationTests.java
+|
+|-- wallet-service/                             # [MODULE] Multi-Currency Wallet Service (port 8082)
+|   |-- pom.xml
+|   |-- Dockerfile
+|   |-- src/main/java/com/enpay/wallet/
+|   |   |-- WalletServiceApplication.java       # @EnableDiscoveryClient, @EnableFeignClients
+|   |   |-- controller/
+|   |   |   |-- WalletController.java           # REST: create(internal), getMyWallet, getBalance, topUp, debit(internal), credit(internal)
+|   |   |   |-- PayeeController.java            # REST: getPayees, addPayee, removePayee
+|   |   |-- dto/
+|   |   |   |-- AccountResponse.java            # accountId, currency, balance
+|   |   |   |-- PayeeRequest.java               # payeeUserId, nickname
+|   |   |   |-- PayeeResponse.java              # payeeId, userId, nickname, createdAt
+|   |   |   |-- TopUpRequest.java               # currency, amount (min 0.01)
+|   |   |   |-- WalletOperationRequest.java     # currency, amount (min 0.0001)
+|   |   |   |-- WalletResponse.java             # walletId, userId, accounts[], createdAt
+|   |   |-- entity/
+|   |   |   |-- Wallet.java                     # WALLET_T: wlltId(UUID), userId, timestamps, OneToMany accounts
+|   |   |   |-- WalletAccount.java              # WALLET_ACCOUNT_T: waccId(UUID), wallet(FK), currency, balance(19,4)
+|   |   |   |-- Payee.java                      # PAYEE_T: payeId(UUID), walletId, userId, nickname (unique constraint)
+|   |   |-- exception/
+|   |   |   |-- WalletExceptionHandler.java     # Extends GlobalExceptionHandler
+|   |   |-- mapper/
+|   |   |   |-- WalletMapper.java               # Entity -> DTO mapping utilities
+|   |   |-- repository/
+|   |   |   |-- WalletRepository.java           # findByWlltUserId, existsByWlltUserId
+|   |   |   |-- WalletAccountRepository.java    # findByWallet_WlltId, findByWallet_WlltUserIdAndWaccCurrency
+|   |   |   |-- PayeeRepository.java            # findByPayeWalletId, existsByPayeWalletIdAndPayeUserId
+|   |   |-- service/
+|   |       |-- WalletService.java              # Interface: create, get, getBalance, topUp, debit, credit
+|   |       |-- PayeeService.java               # Interface: addPayee, getPayees, removePayee
+|   |       |-- impl/
+|   |           |-- WalletServiceImpl.java      # Creates 3 default accounts (MYR, SGD, USD), MoneyUtil ops
+|   |           |-- PayeeServiceImpl.java       # Duplicate check, ownership verification
+|   |-- src/main/resources/
+|   |   |-- application.yml                     # DB: ewallet_wallet_db
+|   |-- src/test/java/com/enpay/wallet/
+|       |-- WalletServiceApplicationTests.java
+|
+|-- collection-service/                         # [MODULE] Collaborative Collection Service (port 8083)
+|   |-- pom.xml
+|   |-- Dockerfile
+|   |-- src/main/java/com/enpay/collection/
+|   |   |-- CollectionServiceApplication.java   # @EnableDiscoveryClient, @EnableFeignClients
+|   |   |-- client/
+|   |   |   |-- NotificationClient.java         # Feign client -> NOTIFICATION-SERVICE
+|   |   |   |-- NotificationClientFallbackFactory.java
+|   |   |-- config/
+|   |   |   |-- RabbitMQConfig.java             # RabbitMQ exchange/queue/binding config
+|   |   |   |-- RequireCollectionRole.java      # Custom annotation for role-based authorization
+|   |   |   |-- CollectionRoleAspect.java       # AOP aspect enforcing @RequireCollectionRole
+|   |   |-- controller/
+|   |   |   |-- CollectionController.java       # REST: CRUD collections, members, balances, close
+|   |   |   |-- ExpenseController.java          # REST: CRUD expenses, shares, internal settlement endpoints
+|   |   |   |-- InvitationController.java       # REST: invite, accept/decline, list invitations
+|   |   |-- dto/
+|   |   |   |-- BalanceSummaryResponse.java     # userId, netBalance, owes, owed
+|   |   |   |-- CollectionDetailResponse.java   # Full collection detail with members
+|   |   |   |-- CollectionResponse.java         # Basic collection info
+|   |   |   |-- CreateCollectionRequest.java    # name, description, category, currency
+|   |   |   |-- CreateExpenseRequest.java       # description, amount, currency, splitType, participants, tax config
+|   |   |   |-- ExpenseResponse.java            # Expense with shares breakdown
+|   |   |   |-- InvitationActionRequest.java    # action: ACCEPT/DECLINE
+|   |   |   |-- InvitationResponse.java         # Invitation status info
+|   |   |   |-- InviteRequest.java              # inviteeUserId, role
+|   |   |   |-- MemberResponse.java             # Member details
+|   |   |   |-- ParticipantShare.java           # userId, percentage/fixedAmount/shareWeight config
+|   |   |   |-- ShareResponse.java              # Individual expense share details
+|   |   |   |-- UpdateCollectionRequest.java    # Update collection fields
+|   |   |   |-- UpdateExpenseRequest.java       # Update expense fields
+|   |   |-- engine/                             # Bill-splitting computation engine
+|   |   |   |-- SplitStrategy.java              # Interface: calculate(totalAmount, participants) -> ShareResult[]
+|   |   |   |-- EqualSplitStrategy.java         # Equal distribution with remainder handling
+|   |   |   |-- ExactSplitStrategy.java         # Fixed amounts per participant
+|   |   |   |-- PercentageSplitStrategy.java    # Percentage-based distribution
+|   |   |   |-- HybridSplitStrategy.java        # Mixed fixed + shared remainder distribution
+|   |   |   |-- HierarchicalSplitStrategy.java  # Tiered distribution (primary/secondary groups)
+|   |   |   |-- SplitStrategyFactory.java       # Factory: SplitType -> SplitStrategy
+|   |   |   |-- RemainderDistributor.java       # Penny-level remainder distribution algorithm
+|   |   |   |-- TaxCalculator.java              # Tax/service fee calculation (simple/compound)
+|   |   |   |-- ShareResult.java                # userId, baseAmount, taxAmount, totalAmount
+|   |   |-- entity/
+|   |   |   |-- Collection.java                 # COLLECTION_T: collId, name, description, category, currency, status, ownerId
+|   |   |   |-- CollectionMember.java           # COLLECTION_MEMBER_T: cmId, collectionId, userId, role, joinedAt
+|   |   |   |-- Expense.java                    # EXPENSE_T: expId, collectionId, description, amount, paidBy, splitType, tax config
+|   |   |   |-- ExpenseShare.java               # EXPENSE_SHARE_T: esId, expenseId, userId, amounts, settled flag
+|   |   |   |-- Invitation.java                 # INVITATION_T: invId, collectionId, inviter, invitee, role, status
+|   |   |   |-- SplitRule.java                  # SPLIT_RULE_T: srId, expenseId, userId, percentage/fixedAmount/shareWeight
+|   |   |-- exception/
+|   |   |   |-- CollectionExceptionHandler.java # Extends GlobalExceptionHandler
+|   |   |-- mapper/
+|   |   |   |-- CollectionMapper.java           # Collection entity -> DTO mapping
+|   |   |   |-- ExpenseMapper.java              # Expense entity -> DTO mapping
+|   |   |   |-- InvitationMapper.java           # Invitation entity -> DTO mapping
+|   |   |-- messaging/
+|   |   |   |-- NotificationEventPublisher.java # RabbitMQ event publisher (expense, invitation events)
+|   |   |-- repository/
+|   |   |   |-- CollectionRepository.java       # findByCollOwnerId, findByCollId
+|   |   |   |-- CollectionMemberRepository.java # findByCollection, findByUserId, existsByCollectionAndUserId
+|   |   |   |-- ExpenseRepository.java          # findByCollection
+|   |   |   |-- ExpenseShareRepository.java     # findByExpense, settlement queries
+|   |   |   |-- InvitationRepository.java       # findByInvitee, findByCollection
+|   |   |   |-- SplitRuleRepository.java        # findByExpense
+|   |   |-- service/
+|   |       |-- CollectionService.java          # Interface: CRUD, members, close
+|   |       |-- ExpenseService.java             # Interface: CRUD expenses, shares, settlement marks
+|   |       |-- InvitationService.java          # Interface: invite, respond, list
+|   |       |-- BalanceService.java             # Interface: calculate balances
+|   |       |-- impl/
+|   |           |-- CollectionServiceImpl.java  # CRUD with role validation
+|   |           |-- ExpenseServiceImpl.java     # Expense + split engine + notification
+|   |           |-- InvitationServiceImpl.java  # Workflow with role validation
+|   |           |-- BalanceServiceImpl.java     # Net position calculation
+|   |-- src/main/resources/
+|   |   |-- application.yml                     # DB: ewallet_collection_db
+|   |-- src/test/java/com/enpay/collection/
+|       |-- CollectionServiceApplicationTests.java
+|
+|-- transaction-service/                        # [MODULE] Payment & Settlement Service (port 8084)
+|   |-- pom.xml
+|   |-- Dockerfile
+|   |-- src/main/java/com/enpay/transaction/
+|   |   |-- TransactionServiceApplication.java  # @EnableDiscoveryClient, @EnableFeignClients
+|   |   |-- client/
+|   |   |   |-- CollectionClient.java           # Feign -> COLLECTION-SERVICE (share ops)
+|   |   |   |-- CollectionClientFallbackFactory.java
+|   |   |   |-- CurrencyClient.java             # Feign -> CURRENCY-SERVICE (conversion)
+|   |   |   |-- CurrencyClientFallbackFactory.java
+|   |   |   |-- NotificationClient.java         # Feign -> NOTIFICATION-SERVICE
+|   |   |   |-- NotificationClientFallbackFactory.java
+|   |   |   |-- WalletClient.java               # Feign -> WALLET-SERVICE (debit/credit)
+|   |   |   |-- WalletClientFallbackFactory.java
+|   |   |-- config/
+|   |   |   |-- RabbitMQConfig.java             # RabbitMQ exchange + Jackson message converter
+|   |   |-- controller/
+|   |   |   |-- TransactionController.java      # REST: settle, settle-net, history, history/{currency}
+|   |   |-- dto/
+|   |   |   |-- NettingRequest.java             # counterpartyId, collectionIds
+|   |   |   |-- NettingResponse.java            # netPayer, netPayee, netAmount, currency, transactions
+|   |   |   |-- SettleRequest.java              # shareId, collectionId, payeeCurrency
+|   |   |   |-- SettlementResponse.java         # Full settlement details
+|   |   |   |-- TransactionResponse.java        # Full transaction details
+|   |   |-- entity/
+|   |   |   |-- Transaction.java                # TRANSACTION_T: txnId, payer/payee, amounts, type, status, idempotencyKey
+|   |   |   |-- Settlement.java                 # SETTLEMENT_T: stlId, txnId, shareId, collectionId, payer/payee
+|   |   |   |-- SagaState.java                  # SAGA_STATE_T: sagaId, txnId, step, status, compensationStep
+|   |   |-- exception/
+|   |   |   |-- TransactionExceptionHandler.java
+|   |   |-- mapper/
+|   |   |   |-- TransactionMapper.java          # Entity -> DTO mapping
+|   |   |-- messaging/
+|   |   |   |-- NotificationEventPublisher.java # RabbitMQ: settlement.received, settlement.confirmed
+|   |   |-- repository/
+|   |   |   |-- TransactionRepository.java      # findByPayerOrPayee, findByIdempotencyKey
+|   |   |   |-- SettlementRepository.java       # findByCollection, findByPayerOrPayee
+|   |   |   |-- SagaStateRepository.java        # findBySagaTransactionId
+|   |   |-- saga/                               # Saga orchestration pattern
+|   |   |   |-- SettlementSagaOrchestrator.java # 7-step settlement saga with compensation
+|   |   |   |-- NettingSagaOrchestrator.java    # 5-step netting saga with compensation
+|   |   |-- service/
+|   |       |-- TransactionService.java         # Interface: settleShare, settleNet, getHistory
+|   |       |-- impl/
+|   |           |-- TransactionServiceImpl.java # Idempotency, validation, saga delegation
+|   |-- src/main/resources/
+|   |   |-- application.yml                     # DB: ewallet_transaction_db
+|   |-- src/test/java/com/enpay/transaction/
+|       |-- TransactionServiceApplicationTests.java
+|
+|-- currency-service/                           # [MODULE] Exchange Rate Service (port 8085)
+|   |-- pom.xml
+|   |-- Dockerfile
+|   |-- src/main/java/com/enpay/currency/
+|   |   |-- CurrencyServiceApplication.java     # @EnableDiscoveryClient, @EnableFeignClients
+|   |   |-- config/
+|   |   |   |-- DataInitializer.java            # Seeds MYR, SGD, USD currencies on first run
+|   |   |   |-- ExchangeRateApiConfig.java      # External API config (URL, appId, cacheTtl)
+|   |   |   |-- RedisConfig.java                # RedisTemplate with JSON serialization
+|   |   |   |-- RestTemplateConfig.java         # RestTemplate with timeouts (5s connect, 10s read)
+|   |   |-- controller/
+|   |   |   |-- CurrencyController.java         # REST: rates, rates/{from}/{to}, convert, currencies
+|   |   |-- dto/
+|   |   |   |-- AllRatesResponse.java           # baseCurrency, rates map, fetchedAt
+|   |   |   |-- ConversionResponse.java         # from/to currencies, amounts, rate, convertedAt
+|   |   |   |-- ExchangeRateResponse.java       # from/to currencies, rate, fetchedAt
+|   |   |-- entity/
+|   |   |   |-- CurrencyEntity.java             # CURRENCY_T: currId, code, name, symbol, isActive
+|   |   |   |-- ExchangeRate.java               # EXCHANGE_RATE_T: exrtId, base/target currency, rate, fetchedAt
+|   |   |-- exception/
+|   |   |   |-- CurrencyExceptionHandler.java   # Extends GlobalExceptionHandler
+|   |   |-- repository/
+|   |   |   |-- CurrencyEntityRepository.java   # findByCurrCode, findByCurrIsActiveTrue
+|   |   |   |-- ExchangeRateRepository.java     # findTop latest rate by currency pair
+|   |   |-- service/
+|   |       |-- ExchangeRateService.java        # Interface: getAllRates, getRate, convert
+|   |       |-- impl/
+|   |           |-- ExchangeRateServiceImpl.java # Redis cache -> External API -> DB fallback -> hardcoded defaults
+|   |-- src/main/resources/
+|   |   |-- application.yml                     # DB: ewallet_currency_db, Redis, Exchange Rate API
+|   |-- src/test/java/com/enpay/currency/
+|       |-- CurrencyServiceApplicationTests.java
+|
+|-- notification-service/                       # [MODULE] Notification Service (port 8086)
+|   |-- pom.xml
+|   |-- Dockerfile
+|   |-- src/main/java/com/enpay/notification/
+|   |   |-- NotificationServiceApplication.java # @EnableDiscoveryClient
+|   |   |-- config/
+|   |   |   |-- RabbitMQConfig.java             # 3 queues: settlement, expense, invitation (topic exchange)
+|   |   |-- controller/
+|   |   |   |-- NotificationController.java     # REST: create(internal), getAll, getUnread, unreadCount, markRead, markAllRead
+|   |   |-- dto/
+|   |   |   |-- CreateNotificationRequest.java  # userId, type, title, message, referenceId
+|   |   |   |-- NotificationResponse.java       # Full notification details with read status
+|   |   |   |-- UnreadCountResponse.java        # userId, unreadCount
+|   |   |-- entity/
+|   |   |   |-- Notification.java               # NOTIFICATION_T: notfId, userId, type, title, message, isRead, readAt
+|   |   |-- exception/
+|   |   |   |-- NotificationExceptionHandler.java
+|   |   |-- messaging/
+|   |   |   |-- NotificationEventConsumer.java  # RabbitMQ listeners for settlement/expense/invitation queues
+|   |   |-- repository/
+|   |   |   |-- NotificationRepository.java     # findByUserId, findUnread, countUnread
+|   |   |-- service/
+|   |       |-- NotificationService.java        # Interface: create, getAll, getUnread, markRead, markAllRead
+|   |       |-- impl/
+|   |           |-- NotificationServiceImpl.java # CRUD with ownership validation
+|   |-- src/main/resources/
+|   |   |-- application.yml                     # DB: ewallet_notification_db
+|
+|-- reporting-service/                          # [MODULE] Reporting & Analytics Service (port 8087)
+|   |-- pom.xml
+|   |-- Dockerfile
+|   |-- src/main/java/com/enpay/reporting/
+|   |   |-- ReportingServiceApplication.java    # @EnableDiscoveryClient, @EnableFeignClients
+|   |   |-- client/
+|   |   |   |-- CollectionClient.java           # Feign -> COLLECTION-SERVICE
+|   |   |   |-- CollectionClientFallbackFactory.java
+|   |   |   |-- CurrencyClient.java             # Feign -> CURRENCY-SERVICE
+|   |   |   |-- CurrencyClientFallbackFactory.java
+|   |   |   |-- TransactionClient.java          # Feign -> TRANSACTION-SERVICE
+|   |   |   |-- TransactionClientFallbackFactory.java
+|   |   |   |-- WalletClient.java               # Feign -> WALLET-SERVICE
+|   |   |   |-- WalletClientFallbackFactory.java
+|   |   |-- controller/
+|   |   |   |-- ReportController.java           # REST: dashboard, spending, ledger, collection statement, personal position
+|   |   |-- dto/
+|   |   |   |-- UserDashboardReport.java        # Wallet summary, collections, transactions, spending totals
+|   |   |   |-- SpendingSummaryReport.java       # Total spent/received, net position, spending by type
+|   |   |   |-- CurrencyLedgerReport.java       # Inflow/outflow ledger with entries
+|   |   |   |-- CollectionStatementReport.java  # Collection expenses summary + member positions
+|   |   |   |-- PersonalPositionReport.java     # Personal owed/owing breakdown per collection
+|   |   |-- exception/
+|   |   |   |-- ReportingExceptionHandler.java  # Extends GlobalExceptionHandler
+|   |   |-- service/
+|   |       |-- ReportingService.java           # Interface: dashboard, spending, ledger, statement, position
+|   |       |-- impl/
+|   |           |-- ReportingServiceImpl.java   # Aggregates data from 4 services via Feign
+|   |-- src/main/resources/
+|       |-- application.yml                     # No DB (data aggregation only), excludes DataSource auto-config
+```
+
+---
+
+## 4. Infrastructure Architecture
+
+### 4.1 Docker Compose Services
+
+| Service | Image/Build | Port | Depends On | Purpose |
+|---|---|---|---|---|
+| **mysql** | `mysql:8.0` | 3306 | - | Relational database for 6 service schemas |
+| **redis** | `redis:7-alpine` | 6379 | - | Caching (exchange rates), rate limiting |
+| **rabbitmq** | `rabbitmq:3-management-alpine` | 5672, 15672 | - | Async messaging (notifications) |
+| **config-server** | Build: `./config-server` | 8888 | - | Centralized configuration |
+| **discovery-server** | Build: `./discovery-server` | 8761 | config-server | Service registry |
+| **api-gateway** | Build: `./api-gateway` | 8080 | config-server, discovery-server, redis | Request routing & auth |
+| **auth-service** | Build: `./auth-service` | 8081 | config-server, discovery-server, mysql | Authentication |
+| **wallet-service** | Build: `./wallet-service` | 8082 | config-server, discovery-server, mysql | Wallet management |
+| **collection-service** | Build: `./collection-service` | 8083 | config-server, discovery-server, mysql, rabbitmq | Expense collections |
+| **transaction-service** | Build: `./transaction-service` | 8084 | config-server, discovery-server, mysql, rabbitmq | Settlements |
+| **currency-service** | Build: `./currency-service` | 8085 | config-server, discovery-server, mysql, redis | Exchange rates |
+| **notification-service** | Build: `./notification-service` | 8086 | config-server, discovery-server, mysql, rabbitmq | Notifications |
+| **reporting-service** | Build: `./reporting-service` | 8087 | config-server, discovery-server | Analytics |
+|   |   |-- exception/
+|   |   |   |-- NotificationExceptionHandler.java
+|   |   |-- messaging/
+|   |   |   |-- NotificationEventConsumer.java  # RabbitMQ listeners for settlement/expense/invitation queues
+|   |   |-- repository/
+|   |   |   |-- NotificationRepository.java     # findByUserId, findUnread, countUnread
+|   |   |-- service/
+|   |       |-- NotificationService.java        # Interface: create, getAll, getUnread, markRead, markAllRead
+|   |       |-- impl/
+|   |           |-- NotificationServiceImpl.java # CRUD with ownership validation
+|   |-- src/main/resources/
+|   |   |-- application.yml                     # DB: ewallet_notification_db
+|
+|-- reporting-service/                          # [MODULE] Reporting & Analytics Service (port 8087)
+|   |-- pom.xml
+|   |-- Dockerfile
+|   |-- src/main/java/com/enpay/reporting/
+|   |   |-- ReportingServiceApplication.java    # @EnableDiscoveryClient, @EnableFeignClients
+|   |   |-- client/
+|   |   |   |-- CollectionClient.java           # Feign -> COLLECTION-SERVICE
+|   |   |   |-- CollectionClientFallbackFactory.java
+|   |   |   |-- CurrencyClient.java             # Feign -> CURRENCY-SERVICE
+|   |   |   |-- CurrencyClientFallbackFactory.java
+|   |   |   |-- TransactionClient.java          # Feign -> TRANSACTION-SERVICE
+|   |   |   |-- TransactionClientFallbackFactory.java
+|   |   |   |-- WalletClient.java               # Feign -> WALLET-SERVICE
+|   |   |   |-- WalletClientFallbackFactory.java
+|   |   |-- controller/
+|   |   |   |-- ReportController.java           # REST: dashboard, spending, ledger, collection statement, personal position
+|   |   |-- dto/
+|   |   |   |-- UserDashboardReport.java        # Wallet summary, collections, transactions, spending totals
+|   |   |   |-- SpendingSummaryReport.java       # Total spent/received, net position, spending by type
+|   |   |   |-- CurrencyLedgerReport.java       # Inflow/outflow ledger with entries
+|   |   |   |-- CollectionStatementReport.java  # Collection expenses summary + member positions
+|   |   |   |-- PersonalPositionReport.java     # Personal owed/owing breakdown per collection
+|   |   |-- exception/
+|   |   |   |-- ReportingExceptionHandler.java  # Extends GlobalExceptionHandler
+|   |   |-- service/
+|   |       |-- ReportingService.java           # Interface: dashboard, spending, ledger, statement, position
+|   |       |-- impl/
+|   |           |-- ReportingServiceImpl.java   # Aggregates data from 4 services via Feign
+|   |-- src/main/resources/
+|       |-- application.yml                     # No DB (data aggregation only), excludes DataSource auto-config
+```
+
+---
+
+### 4.2 Database Schema (Database-per-Service Pattern)
+
+| Database | Service | Tables (auto-created by JPA) |
+|---|---|---|
+| `ewallet_auth_db` | auth-service | USER_T, USER_CREDENTIAL_T |
+| `ewallet_wallet_db` | wallet-service | WALLET_T, WALLET_ACCOUNT_T, PAYEE_T |
+| `ewallet_collection_db` | collection-service | COLLECTION_T, COLLECTION_MEMBER_T, EXPENSE_T, EXPENSE_SHARE_T, INVITATION_T, SPLIT_RULE_T |
+| `ewallet_transaction_db` | transaction-service | TRANSACTION_T, SETTLEMENT_T, SAGA_STATE_T |
+| `ewallet_currency_db` | currency-service | CURRENCY_T, EXCHANGE_RATE_T |
+| `ewallet_notification_db` | notification-service | NOTIFICATION_T |
+
+### 4.3 Service Startup Order
+
+```
+1. mysql, redis, rabbitmq            (Infrastructure - parallel)
+2. config-server                      (Must be healthy before any Spring service)
+3. discovery-server                   (Must be healthy for service registration)
+4. api-gateway                        (Needs discovery-server + redis)
+5. auth-service                       (Needs discovery-server + mysql)
+6. wallet-service                     (Needs discovery-server + mysql)
+7. collection-service                 (Needs discovery-server + mysql + rabbitmq)
+8. transaction-service                (Needs discovery-server + mysql + rabbitmq)
+9. currency-service                   (Needs discovery-server + mysql + redis)
+10. notification-service              (Needs discovery-server + mysql + rabbitmq)
+11. reporting-service                 (Needs discovery-server only)
+```
+
+### 4.4 Configuration Management Strategy
+
+The project uses a **two-tier configuration** strategy:
+
+1. **Local `application.yml`** (per service): Contains baseline configuration for local development (localhost references)
+2. **Config Server `configurations/`**: Contains the same configuration plus additional settings (CORS, Resilience4j, etc.) — fetched at runtime via `spring.config.import: optional:configserver:http://localhost:8888`
+3. **Docker profile overrides** (`*-docker.yml`): Replaces `localhost` with Docker service names (e.g., `mysql`, `redis`, `rabbitmq`, `discovery-server`)
+
+The `optional:` prefix allows services to start standalone without the config server for local development.
+
+---
+
+## 5. Build & Deployment Process
+
+### 5.1 Build Commands
+
+```bash
+# Build entire project (all modules)
+./mvnw clean package -DskipTests
+
+# Build specific module
+./mvnw clean package -pl wallet-service -am -DskipTests
+
+# Run locally (start each service individually)
+./mvnw spring-boot:run -pl config-server
+./mvnw spring-boot:run -pl discovery-server
+./mvnw spring-boot:run -pl api-gateway
+# ... and so on for each service
+```
+
+### 5.2 Docker Deployment
+
+```bash
+# Build and start all services
+docker-compose up --build
+
+# Start only infrastructure
+docker-compose up mysql redis rabbitmq
+
+# Start specific service
+docker-compose up --build wallet-service
+```
+
+### 5.3 Dockerfile Pattern (consistent across all services)
+
+```dockerfile
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+COPY target/*.jar app.jar
+EXPOSE <service-port>
+ENTRYPOINT ["java", "-jar", "app.jar", "--spring.profiles.active=docker"]
+```
+
+---
+
+## 6. API Route Summary (Gateway Routes)
+
+All client requests enter through the API Gateway on port **8080**:
+
+| Route Pattern | Target Service | Service ID |
+|---|---|---|
+| `/api/auth/**` | auth-service | AUTH-SERVICE |
+| `/api/wallets/**` | wallet-service | WALLET-SERVICE |
+| `/api/collections/**` | collection-service | COLLECTION-SERVICE |
+| `/api/transactions/**` | transaction-service | TRANSACTION-SERVICE |
+| `/api/currency/**` | currency-service | CURRENCY-SERVICE |
+| `/api/notifications/**` | notification-service | NOTIFICATION-SERVICE |
+| `/api/reports/**` | reporting-service | REPORTING-SERVICE |
+
+**Open paths (no JWT required):** `/api/auth/register`, `/api/auth/login`, `/api/auth/refresh`
+
+All other paths require a valid JWT `Bearer` token in the `Authorization` header. The gateway extracts the `userId` from the token and forwards it as the `X-User-Id` header to downstream services.
+
+---
+
+## 7. Cross-Cutting Concerns
+
+### 7.1 Exception Handling
+- `GlobalExceptionHandler` in `common-lib` provides base handling for all exceptions
+- Each service extends it with a local `*ExceptionHandler` class
+- Standardized `ApiResponse<T>` envelope for all responses
+
+### 7.2 Money Handling
+- All monetary amounts use `BigDecimal` with scale=4 and `HALF_UP` rounding
+- `MoneyUtil` utility class provides safe arithmetic operations
+- `RemainderDistributor` handles penny-level precision in bill splitting
+
+### 7.3 Resilience Patterns
+- **Circuit Breaker:** Resilience4j with configurable sliding windows and failure thresholds
+- **Retry:** Exponential backoff with max 3 attempts for IO/timeout exceptions
+- **Time Limiter:** 3-5 second timeouts on inter-service calls
+- **Fallback Factories:** Every Feign client has a `FallbackFactory` for graceful degradation
+
+### 7.4 Messaging Architecture
+- **Exchange:** `enpay.notifications` (Topic Exchange)
+- **Queues:** `enpay.notifications.settlement`, `enpay.notifications.expense`, `enpay.notifications.invitation`
+- **Routing Keys:** `notification.settlement.#`, `notification.expense.#`, `notification.invitation.#`
+- **Producers:** transaction-service, collection-service
+- **Consumer:** notification-service (3 listeners)
+
+### 7.5 Rate Limiting
+- Redis-based rate limiting on transaction routes via Spring Cloud Gateway
+- Rate: 5 requests/second, burst capacity: 10
+- Key resolver: `X-User-Id` header or client IP fallback

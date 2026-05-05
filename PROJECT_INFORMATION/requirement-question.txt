@@ -1,0 +1,126 @@
+CHAPTER 1: INTRODUCTION
+Chapter 1 of the report is an important chapter since it describes the overall project and its outcome. As this is the first chapter that the evaluators will read, it is essential to make a good first impression. It is important to write a chapter that clearly explains the project's flow. A thorough understanding of the ground work is necessary in order to write a well-written chapter. Table 1 shows the outline of Chapter 1.
+1.1 Introduction 
+1.2 Problem Background 
+• Example: Explain why current technology T is underperforming environment Z. 
+1.3 Project Aim 
+• A single sentence statement. 
+• Explaining the key target of the project. 
+• Example: To develop a system X using technology Y to be employed in environment Z. 
+1.4 Objectives 
+• A minimum of three objectives and a maximum of four. 
+• Must be measurable 
+1.5 Scope 
+• Describes in detail tasks to be executed. 
+• Constraints regarding any part of the project development (e.g. size of system and technology). 
+• What will and will not be done as part of the project.
+1.6	Potential Benefit 
+•	Tangible benefit. 
+•  Intangible benefit
+•	Target user
+1.7 Overview of the IR
+1.8 Project Plan
+
+ 
+CHAPTER 2: LITERATURE REVIEW
+In Chapter 2, all the results and findings of the review of literature are presented. Literature review provides a sound basis for a good problem formulation and planning of project. From the literature review, student will be able to build the basic understanding of the project. Table 2.1  shows the outline of Chapter 2 of the report.
+2.1 Domain Research
+•	Study of domain from general to specific
+•	Study of Related theories / technology/ algorithm that can contribute towards solving the problems and others.  
+•	Every sub-topic within the domain must have a review
+2.2 Similar Systems/ Works
+•	Characteristic of similar systems/ works
+•	Strength and weakness
+•	Conclusion
+
+2.3 Technical Research
+•	System requirement analysis
+o	Identify the hardware / software for the project and justify  
+CHAPTER 3: METHODOLOGY 
+Methodology describes the overall approach and framework chosen for research and system development. The content for the methodology chapter of the report can hold methods, techniques or approach that is used or will be used during design and implementation of the project. 
+In addition, this chapter also justifies the choice of methods or approach, as well as hardware and software requirements. It must be noted that the primary objective is not to explain the functions of each phase but rather the process that goes on within in. Table 3.1 shows the outline of Chapter 3 of the report. This outline must be followed, although slight modifications that enhance understanding of the project are accepted.
+3.1 System Development Methodology
+•	Introduction
+•	Methodology choice and justification
+•	Describe the activities and process in each phase towards the chosen methodology (traditional or modern)
+3.2 Data Gathering Design
+•	Describe the data gathering techniques choose for the project
+o	Surveys
+o	Interview
+o	Document analysis
+o	Observation
+o	Other relevant techniques
+•	Design the questions/event /activities base on the techniques chosen and get verification from the supervisor, through the ethic forms. 
+•	Minimum number or participant to be used:
+o	Survey = 30 participants
+o	Interview = 3 participants
+•	Note that this data gathering activities need to be conducted with the identified target audience and not with your friends. 
+•	Note that respondent demographic information are needed to be included in the appendix 
+3.3 Analysis
+•	Analysis towards the data retrieve from the data gathering activities.
+•	Final list of user requirement summarized from the analysis. 
+CHAPTER 4: DESIGN AND IMPLEMENTATION
+
+Design and implementation chapter reports the design of the completed end-products/system/ applications. The content will include system design diagram, system architecture, interface design, database design, storyboard, screenshot of end products and other related/appropriate techniques. This chapter will also contain Data Flow Diagram (DFD), use case diagram, sequence diagram, class diagram, ERD and others, associated with the application development model chosen (structured or object-oriented). 
+4.1 Introduction
+4.2 Design
+•	This may include system design diagram, system architecture such as activity diagram, use case diagram, sequence diagram and others. 
+•	This may include interaction design, assets definition and design, application structure, animation design, level game design , game mechanic design, 3D models design, multimedia assets design and others.
+•	It depends on what development model chosen (methodology) for the project. 
+•	Use case diagram, use-case spec, class-diagram, activity-diagrams and sequence diagrams 
+•	Or Contest diagram, DFD Level 0, DFD Level 1 and program flow charts.
+4.3 Database Design (if any)
+•	Database design is optional where it’s depends on the methodology used for the project development. 
+•	Do not that if the project does not have any databases , there is no need to include this inside the documentation. 
+     4.3.1 ERD 
+     4.3.2 Database Schema (Structure of the database tables)  Mon,6-Oct-2025
+Fri,4-Jul-2025
+4.4 Interface Design
+•	This may include menu and screen design, system navigation and content design, page navigation design , storyboard and other related design on regards of the UI. 
+MS Paint / Pencil / Figma
+4.5 Test Case Preparation
+      4.5.1 Introduction
+              Discuss the various types of testing methods – ½ - 1 P
+            4.5.1.1 Unit Testing
+                  4.4.1.1 Name of the program: login.aspx
+            4.5.1.2 User Acceptance Testing (UAT) Preparation
+4.6 Execution 
+      4.5.1 Screenshots
+               4.5.1 Login Page login.aspx
+                      4-5 Lines
+               4.5.2 products..aspx
+                      Dscription 4—5 Lines
+      4.5.1 Sample codes
+               4.5.2 Name of program: sign_in.cs
+Description
+•	This section may include the description / explanation on how the technology choose in implementing in the project, the concept , APIs implementation and other that associated with the project development. 
+•	This section may include the description / explanation of what materials, tools, software , hardware and any other resources that were used and configure during the project development. It may also include the step-by-step procedure and methods used / followed that associated with the project development. 
+•	This section may include the description / explanation on how those assets in the design part above are created, techniques use in the creation and others. 
+4.6 Screenshot
+•	Include the screenshot of the complete end products/ application/ website/ systems and provide justification for each of it.
+4.7 Summary  
+CHAPTER 5: RESULT AND DISCUSSION
+An effective result and discussion chapter will successfully explain all the results achieved through project coding, experiments and testing. The results of the project implementation are discussed in detail here. Documents and proof of correctness of as testing results, must be stated. the project must be attached. Testing types and techniques, as well
+5.1 Testing And Discussion
+       5.1 Unit Testing:
+Name of program: login.php
+                  5.1.1.1 Name of the program: login.aspx
+       5.3.2. User Acceptance Testing:
+Name of the Tester: Mr.DHASON PADMAKUMAR
+Job Position: Farmer  
+Date: Fri,24-May-2024
+Time start: 11 am   Time end: 11:30 am
+ 
+CHAPTER 6: CONCLUSION
+This chapter summarizes the whole project undertaken by a student. It discusses results and achievements of the project as well as suggestions and future works. Project strength, weaknesses and suggestions to improve must be stated clearly and concisely
+6.1 Critical Evaluation 
+•	Discuss the achievement of the overall project achievement
+•	Justify were the contribution of the project towards community/ industries and others.
+•	Discuss the strength of the project. 
+•	1 – 1.5 p (2 – 4 para)
+6.2 Limitation
+•	Discuss the limitation of the project.
+•	½ p – 1 p (2 – 4 para)
+6.3 Recommendation
+•	Suggestion for future improvement.
+•	½ - 1 p (2 – 4 para)

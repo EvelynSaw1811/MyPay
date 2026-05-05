@@ -1,0 +1,300 @@
+PHASE 0 — SYSTEM FOUNDATION (CRITICAL THINKING FIRST)
+Goal:
+
+Define what the system is before coding anything
+
+Step 0.1: Define Core Domain (VERY IMPORTANT)
+
+You must formalize these core domain objects:
+
+User
+Wallet (multi-currency)
+Collection (group)
+Expense / Bill
+Split Rule
+Transaction
+Notification
+
+These map directly to your FYP scope:
+
+Collaborative finance
+Multi-currency
+Hybrid split logic
+
+Step 0.2: Define Bounded Contexts (Microservices)
+
+Split system into independent domains:
+
+Microservice	Responsibility
+Auth Service	Authentication & JWT
+User Service	Profile, Payee
+Wallet Service	Multi-currency balances
+Collection Service	Group management
+Split Service	Core algorithm engine
+Transaction Service	Payment execution
+FX Service	Currency conversion
+Notification Service	Async messaging
+
+Principle:
+Single Responsibility + Low Coupling + High Cohesion
+
+Step 0.3: Define Data Ownership (Database per Service)
+
+Each service MUST own its own database:
+
+Wallet DB ≠ Collection DB
+No shared tables
+
+This ensures:
+
+Fault isolation
+Scalability
+Data integrity
+PHASE 1 — INFRASTRUCTURE SETUP
+Goal:
+
+Build the skeleton of the distributed system
+
+Step 1.1: Create Base Spring Boot Template
+
+For ALL services:
+
+Spring Boot 3.x
+Maven/Gradle
+Common structure:
+controller/
+service/
+repository/
+domain/
+dto/
+config/
+
+Step 1.2: Setup Core Infrastructure Services
+1. API Gateway
+Central entry point
+Route requests to services
+2. Service Registry (Eureka)
+Dynamic service discovery
+3. Config Server (optional but recommended)
+Centralized configuration
+
+Step 1.3: Define Communication Protocol
+REST (synchronous)
+JSON DTOs
+Standard response format:
+{
+  status,
+  message,
+  data
+}
+PHASE 2 — AUTHENTICATION & SECURITY
+Goal:
+
+Secure the entire system
+
+Step 2.1: Build Auth Service
+
+Features:
+
+Register
+Login
+JWT generation
+Token validation
+
+Step 2.2: Implement Security Standards
+Password hashing (BCrypt)
+JWT stateless authentication
+Role-based access (Admin / Editor / Member)
+
+Step 2.3: Gateway Security Filter
+Validate JWT before routing request
+Reject unauthorized access
+PHASE 3 — CORE DOMAIN IMPLEMENTATION
+🔹 3.1 USER SERVICE
+Responsibilities:
+Profile management
+Payee registry
+Key APIs:
+GET /users
+POST /payees
+🔹 3.2 WALLET SERVICE
+Responsibilities:
+Multi-currency balances (MYR, SGD, USD)
+Balance tracking
+Core Design:
+Use BigDecimal ONLY
+No float/double (financial rule)
+Key Features:
+Create wallet
+Get balances
+Deduct / add funds
+🔹 3.3 COLLECTION SERVICE
+Responsibilities:
+Group creation
+Role management
+Member tracking
+Core Design:
+Many-to-many:
+User ↔ Collection
+Role table (Admin / Editor / Member)
+Key APIs:
+Create collection
+Invite user
+Assign role
+🔹 3.4 SPLIT LOGIC SERVICE (MOST IMPORTANT)
+Core Engine of Your FYP
+
+Step 3.4.1: Define Split Models
+
+Support:
+
+Equal
+Percentage
+Fixed
+Hybrid
+Hierarchical
+
+Step 3.4.2: Implement Algorithm Pipeline
+
+STRICT ORDER:
+
+1. Deduct fixed amounts
+2. Compute shared base
+3. Apply division rule
+4. Apply tax individually
+5. Handle rounding
+
+Step 3.4.3: Implement Money Pattern Algorithm
+
+Ensure:
+No money loss
+Zero-sum integrity
+
+Step 3.4.4: Output Structure
+[
+  { userId, amountOwed },
+  ...
+]
+🔹 3.5 TRANSACTION SERVICE
+Financial core (ACID critical)
+Responsibilities:
+Execute payment
+Handle settlement
+
+Step 3.5.1: Implement ACID Transactions
+Use MySQL transactions
+Rollback on failure
+
+Step 3.5.2: Payment Flow
+Validate balance
+Call FX Service (if needed)
+Deduct payer
+Credit receiver
+Save transaction
+
+Step 3.5.3: Support Cross-Currency
+
+Use:
+Real-time conversion
+Base currency (USD recommended)
+
+🔹 3.6 FX SERVICE
+Responsibilities:
+Currency conversion
+Rate management
+Implementation:
+Use mock API (per constraint)
+Apply:
+Base currency (USD)
+Cross-rate calculation
+Add:
+TTL caching (important)
+
+🔹 3.7 NOTIFICATION SERVICE
+Responsibilities:
+Send events:
+Payment request
+Settlement confirmation
+Design:
+Async (event-driven)
+Do NOT block transactions
+PHASE 4 — INTER-SERVICE COMMUNICATION
+Goal:
+
+Make services work together
+
+Step 4.1: Define Service Contracts
+
+Example:
+
+Wallet API contract
+Split API contract
+
+Step 4.2: Implement API Calls
+
+Use:
+Feign Client / RestTemplate
+
+Step 4.3: Handle Failures
+Timeout handling
+Retry mechanism
+Fallback logic
+PHASE 5 — DATA CONSISTENCY & VALIDATION
+Goal:
+
+Ensure financial correctness
+
+Key Rules:
+No partial transactions
+Always zero-sum
+Validate before execution
+Implement:
+Input validation layer
+Business rule validation
+PHASE 6 — TESTING STRATEGY
+Goal:
+
+Ensure system correctness
+
+Step 6.1: Unit Testing
+Split logic
+Wallet calculation
+
+Step 6.2: Integration Testing
+Service-to-service calls
+
+Step 6.3: Scenario Testing
+
+Examples:
+
+Multi-currency split
+Tax + hybrid split
+Concurrent payments
+PHASE 7 — DEPLOYMENT & EXECUTION
+Goal:
+
+Run system as real environment
+
+Step 7.1: Dockerize Each Service
+One container per service
+
+Step 7.2: Run Full System
+API Gateway
+All services
+Databases
+
+Step 7.3: Validate End-to-End Flow
+
+Test:
+
+Create collection → add expense → split → pay
+
+
+FINAL SYSTEM FLOW (BIG PICTURE)
+User creates expense
+Split Service calculates distribution
+Collection stores liabilities
+User triggers payment
+Transaction Service executes
+Wallet updated
+Notification sent
