@@ -1,0 +1,38 @@
+server:
+  port: 8084
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3307/ewallet_transaction_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+
+spring.cloud.openfeign.circuitbreaker.enabled: true
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      walletServiceCB:
+        failure-rate-threshold: 30
+        wait-duration-in-open-state: 5s
+        minimum-number-of-calls: 3
+      currencyServiceCB:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+      collectionServiceCB:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+  timelimiter:
+    instances:
+      walletServiceCB:
+        timeout-duration: 3s
+      currencyServiceCB:
+        timeout-duration: 3s
+      collectionServiceCB:
+        timeout-duration: 3s

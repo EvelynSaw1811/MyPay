@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: auth-service
+  config:
+    import: optional:configserver:http://localhost:8888
+  datasource:
+    url: jdbc:mysql://localhost:3307/ewallet_auth_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+
+server:
+  port: 8081
+
+jwt:
+  secret: mypay-super-secret-key-256-bits-long-for-hmac-sha256-algorithm-secure
+  expiration-ms: 900000
+  refresh-expiration-ms: 604800000

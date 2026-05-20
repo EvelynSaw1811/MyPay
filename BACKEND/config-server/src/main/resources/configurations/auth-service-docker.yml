@@ -1,0 +1,5 @@
+spring:
+  datasource:
+    url: jdbc:mysql://mysql:3306/ewallet_auth_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+  rabbitmq:
+    host: rabbitmq

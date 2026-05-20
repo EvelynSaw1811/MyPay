@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: reporting-service
+  config:
+    import: optional:configserver:http://localhost:8888
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+
+server:
+  port: 8087
+
+spring.cloud.openfeign.circuitbreaker.enabled: true
+
+resilience4j:
+  timelimiter:
+    instances:
+      default:
+        timeout-duration: 5s

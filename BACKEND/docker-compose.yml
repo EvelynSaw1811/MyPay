@@ -1,0 +1,216 @@
+﻿
+
+services:
+
+  # Layer 1: Infrastructure
+  mysql:
+    image: mysql:8.0
+    container_name: mypay-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_HOST: "%"
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init-schemas.sql:/docker-entrypoint-initdb.d/init-schemas.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: mypay-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: mypay-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Layer 2: Config Server
+  config-server:
+    build: ./config-server
+    container_name: mypay-config-server
+    ports:
+      - "8888:8888"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-mypay-super-secret-key-256-bits-long-for-hmac-sha256-algorithm-secure}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-*}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8888/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  # Layer 3: Discovery Server
+  discovery-server:
+    build: ./discovery-server
+    container_name: mypay-discovery-server
+    ports:
+      - "8761:8761"
+    depends_on:
+      config-server:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8761/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  # Layer 4: API Gateway
+  api-gateway:
+    build: ./api-gateway
+    container_name: mypay-api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+
+  # Layer 5: Business Services
+  auth-service:
+    build: ./auth-service
+    container_name: mypay-auth-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker,dev
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+
+  wallet-service:
+    build: ./wallet-service
+    container_name: mypay-wallet-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker,dev
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+
+  collection-service:
+    build: ./collection-service
+    container_name: mypay-collection-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker,dev
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+
+  currency-service:
+    build: ./currency-service
+    container_name: mypay-currency-service
+    ports:
+      - "8085:8085"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+
+  transaction-service:
+    build: ./transaction-service
+    container_name: mypay-transaction-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker,dev
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+
+  notification-service:
+    build: ./notification-service
+    container_name: mypay-notification-service
+    ports:
+      - "8086:8086"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+
+  reporting-service:
+    build: ./reporting-service
+    container_name: mypay-reporting-service
+    ports:
+      - "8087:8087"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+
+volumes:
+  mysql_data:

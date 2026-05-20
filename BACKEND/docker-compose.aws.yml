@@ -1,0 +1,72 @@
+# AWS override file — apply on top of docker-compose.yml on EC2.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.aws.yml up -d
+#
+# This file:
+#   1. Caps JVM heap per service to fit comfortably in a t3.medium (4 GB)
+#   2. Sends logs to CloudWatch (optional — remove the logging block if not needed)
+#   3. Restarts containers automatically after EC2 reboots
+
+services:
+
+  # ── Infrastructure ──────────────────────────────────────────────
+  mysql:
+    restart: unless-stopped
+
+  redis:
+    restart: unless-stopped
+
+  rabbitmq:
+    restart: unless-stopped
+
+  # ── Config & Discovery ──────────────────────────────────────────
+  config-server:
+    restart: unless-stopped
+    environment:
+      JAVA_TOOL_OPTIONS: -Xmx192m -Xss256k -XX:+UseContainerSupport
+
+  discovery-server:
+    restart: unless-stopped
+    environment:
+      JAVA_TOOL_OPTIONS: -Xmx192m -Xss256k -XX:+UseContainerSupport
+
+  # ── Gateway ─────────────────────────────────────────────────────
+  api-gateway:
+    restart: unless-stopped
+    environment:
+      JAVA_TOOL_OPTIONS: -Xmx384m -Xss256k -XX:+UseContainerSupport
+
+  # ── Business Services ───────────────────────────────────────────
+  auth-service:
+    restart: unless-stopped
+    environment:
+      JAVA_TOOL_OPTIONS: -Xmx256m -Xss256k -XX:+UseContainerSupport
+
+  wallet-service:
+    restart: unless-stopped
+    environment:
+      JAVA_TOOL_OPTIONS: -Xmx256m -Xss256k -XX:+UseContainerSupport
+
+  collection-service:
+    restart: unless-stopped
+    environment:
+      JAVA_TOOL_OPTIONS: -Xmx384m -Xss256k -XX:+UseContainerSupport
+
+  transaction-service:
+    restart: unless-stopped
+    environment:
+      JAVA_TOOL_OPTIONS: -Xmx384m -Xss256k -XX:+UseContainerSupport
+
+  currency-service:
+    restart: unless-stopped
+    environment:
+      JAVA_TOOL_OPTIONS: -Xmx192m -Xss256k -XX:+UseContainerSupport
+
+  notification-service:
+    restart: unless-stopped
+    environment:
+      JAVA_TOOL_OPTIONS: -Xmx192m -Xss256k -XX:+UseContainerSupport
+
+  reporting-service:
+    restart: unless-stopped
+    environment:
+      JAVA_TOOL_OPTIONS: -Xmx192m -Xss256k -XX:+UseContainerSupport
