@@ -94,13 +94,18 @@ public class ExpenseServiceImpl implements ExpenseService {
 
         final Expense savedExpense = expense;
         List<ExpenseShare> shares = results.stream()
-                .map(r -> ExpenseShare.builder()
-                        .expense(savedExpense)
-                        .expenseShareUserId(r.getUserId())
-                        .expenseShareBaseAmount(r.getBaseAmount())
-                        .expenseShareTaxAmount(r.getTaxAmount())
-                        .expenseShareTotalAmount(r.getTotalAmount())
-                        .build())
+                .map(r -> {
+                    boolean payerShare = r.getUserId().equals(request.getPaidBy());
+                    return ExpenseShare.builder()
+                            .expense(savedExpense)
+                            .expenseShareUserId(r.getUserId())
+                            .expenseShareBaseAmount(r.getBaseAmount())
+                            .expenseShareTaxAmount(r.getTaxAmount())
+                            .expenseShareTotalAmount(r.getTotalAmount())
+                            .expenseShareSettled(payerShare)
+                            .expenseShareSettledDateTime(null)
+                            .build();
+                })
                 .toList();
         shareRepository.saveAll(shares);
 
@@ -138,8 +143,10 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Transactional
     public ExpenseResponse updateExpense(String collectionId, String expenseId, String userId, CreateExpenseRequest request) {
         Expense expense = findExpense(collectionId, expenseId);
+        final String existingPaidBy = expense.getExpensePaidBy();
         boolean hasSettledShares = shareRepository.findByExpense(expense).stream()
-                .anyMatch(s -> Boolean.TRUE.equals(s.getExpenseShareSettled()));
+                .anyMatch(s -> Boolean.TRUE.equals(s.getExpenseShareSettled())
+                        && !s.getExpenseShareUserId().equals(existingPaidBy));
         if (hasSettledShares) {
             throw new ConflictException("Cannot update expense with settled shares");
         }
@@ -179,13 +186,18 @@ public class ExpenseServiceImpl implements ExpenseService {
 
         final Expense savedExpense = expense;
         List<ExpenseShare> shares = results.stream()
-                .map(r -> ExpenseShare.builder()
-                        .expense(savedExpense)
-                        .expenseShareUserId(r.getUserId())
-                        .expenseShareBaseAmount(r.getBaseAmount())
-                        .expenseShareTaxAmount(r.getTaxAmount())
-                        .expenseShareTotalAmount(r.getTotalAmount())
-                        .build())
+                .map(r -> {
+                    boolean payerShare = r.getUserId().equals(request.getPaidBy());
+                    return ExpenseShare.builder()
+                            .expense(savedExpense)
+                            .expenseShareUserId(r.getUserId())
+                            .expenseShareBaseAmount(r.getBaseAmount())
+                            .expenseShareTaxAmount(r.getTaxAmount())
+                            .expenseShareTotalAmount(r.getTotalAmount())
+                            .expenseShareSettled(payerShare)
+                            .expenseShareSettledDateTime(null)
+                            .build();
+                })
                 .toList();
         shareRepository.saveAll(shares);
 
@@ -194,12 +206,13 @@ public class ExpenseServiceImpl implements ExpenseService {
 
     @Override
     @Transactional
-    public void deleteExpense(String collectionId, String expenseId, String userId) {
+    public void deleteExpense(String collectionId, String expenseId, String userId, boolean waiveSettlements) {
         Expense expense = findExpense(collectionId, expenseId);
-        boolean hasSettledShares = shareRepository.findByExpense(expense).stream()
-                .anyMatch(s -> Boolean.TRUE.equals(s.getExpenseShareSettled()));
-        if (hasSettledShares) {
-            throw new ConflictException("Cannot delete expense with settled shares");
+        boolean hasUnsettledCounterpartyShares = shareRepository.findByExpense(expense).stream()
+                .anyMatch(s -> !Boolean.TRUE.equals(s.getExpenseShareSettled())
+                        && !s.getExpenseShareUserId().equals(expense.getExpensePaidBy()));
+        if (hasUnsettledCounterpartyShares && !waiveSettlements) {
+            throw new ConflictException("Expense has unsettled shares. Settle all shares or waive remaining settlements before deleting.");
         }
         expenseRepository.delete(expense);
     }

@@ -11,7 +11,7 @@ public interface ExpenseService {
     List<ExpenseResponse> getExpenses(String collectionId);
     ExpenseResponse getExpense(String collectionId, String expenseId);
     ExpenseResponse updateExpense(String collectionId, String expenseId, String userId, CreateExpenseRequest request);
-    void deleteExpense(String collectionId, String expenseId, String userId);
+    void deleteExpense(String collectionId, String expenseId, String userId, boolean waiveSettlements);
     ShareResponse getShare(String collectionId, String expenseId, String shareId);
     void settleShare(String collectionId, String expenseId, String shareId);
     void unsettleShare(String collectionId, String expenseId, String shareId);

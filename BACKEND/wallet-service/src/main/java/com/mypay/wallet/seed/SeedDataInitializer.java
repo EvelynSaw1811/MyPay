@@ -41,17 +41,15 @@ public class SeedDataInitializer implements ApplicationRunner {
         Account a5 = createAccountIfMissing(SeedUsers.U5, Map.of("MYR", bd(1500), "SGD", bd(100), "USD", bd(0)));
         Account a6 = createAccountIfMissing(SeedUsers.U6, Map.of("MYR", bd(500), "SGD", bd(2000)));
 
-        // U7 is inactive and U8 intentionally has no account.
-        Account a9 = createAccountIfMissing(SeedUsers.U9, Map.of("MYR", bd(25)));
+        // U7 is inactive and intentionally has no wallet account.
 
         Map<Account, List<Object[]>> payeeMap = Map.of(
-                a1, List.<Object[]>of(new Object[]{SeedUsers.U2, "Bob"}, new Object[]{SeedUsers.U3, "Carol"}, new Object[]{SeedUsers.U9, null}),
+                a1, List.<Object[]>of(new Object[]{SeedUsers.U2, "Bob"}, new Object[]{SeedUsers.U3, "Carol"}, new Object[]{SeedUsers.U5, "Emma"}),
                 a2, List.<Object[]>of(new Object[]{SeedUsers.U1, "Alice"}, new Object[]{SeedUsers.U6, "Frank"}),
                 a3, List.<Object[]>of(new Object[]{SeedUsers.U5, "Emma"}),
                 a4, List.<Object[]>of(new Object[]{SeedUsers.U5, "Emma"}, new Object[]{SeedUsers.U1, "Alice"}),
                 a5, List.<Object[]>of(new Object[]{SeedUsers.U2, "Bob"}),
-                a6, List.<Object[]>of(new Object[]{SeedUsers.U4, "David"}),
-                a9, List.<Object[]>of(new Object[]{SeedUsers.U1, "Alice"})
+                a6, List.<Object[]>of(new Object[]{SeedUsers.U4, "David"})
         );
 
         payeeMap.forEach((account, contacts) ->

@@ -1,2 +1,0 @@
-# MyPay
-FYP

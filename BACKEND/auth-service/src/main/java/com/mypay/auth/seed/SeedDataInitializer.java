@@ -22,8 +22,7 @@ public class SeedDataInitializer implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        boolean usersExist = existsUser(SeedUsers.U1) && existsUser(SeedUsers.U7)
-                && existsUser(SeedUsers.U8) && existsUser(SeedUsers.U9);
+        boolean usersExist = existsUser(SeedUsers.U1) && existsUser(SeedUsers.U7);
 
         String hash = new BCryptPasswordEncoder().encode(PASSWORD);
 
@@ -34,8 +33,6 @@ public class SeedDataInitializer implements ApplicationRunner {
         insertUserIfMissing(SeedUsers.U5, "emma.lee@mypay.test",       "+60111234005", "Emma",  "Lee",  "Emma",  "ACTIVE",   hash);
         insertUserIfMissing(SeedUsers.U6, "frank.ng@mypay.test",       "+65901234006", "Frank", "Ng",   "Frank", "ACTIVE",   hash);
         insertUserIfMissing(SeedUsers.U7, "grace.inactive@mypay.test", "+60111234007", "Grace", "Ong",  "Grace", "INACTIVE", hash);
-        insertUserIfMissing(SeedUsers.U8, "henry.nowallet@mypay.test", "+60111234008", "Henry", "Low",  "Henry", "ACTIVE",   hash);
-        insertUserIfMissing(SeedUsers.U9, "ivy.nonickname@mypay.test", "+60111234009", "Ivy",   "Teoh", null,    "ACTIVE",   hash);
 
         if (usersExist) {
             log.info("[Seed] Auth users already present — backfilled invitation codes.");

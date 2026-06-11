@@ -12,5 +12,6 @@ public interface CollectionService {
     void closeCollection(String collectionId, String userId);
     List<MemberResponse> getMembers(String collectionId);
     void removeMember(String collectionId, String targetUserId, String requesterId);
+    void leaveCollection(String collectionId, String userId);
     List<BalanceSummaryResponse> getBalances(String collectionId, String userId);
 }

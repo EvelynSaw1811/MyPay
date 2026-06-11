@@ -8,7 +8,5 @@ public final class SeedUsers {
     public static final String U5 = "00000005-0000-0000-0000-000000000005"; // Emma
     public static final String U6 = "00000006-0000-0000-0000-000000000006"; // Frank
     public static final String U7 = "00000007-0000-0000-0000-000000000007"; // Grace inactive
-    public static final String U8 = "00000008-0000-0000-0000-000000000008"; // Henry no wallet
-    public static final String U9 = "00000009-0000-0000-0000-000000000009"; // Ivy null nickname
     private SeedUsers() {}
 }

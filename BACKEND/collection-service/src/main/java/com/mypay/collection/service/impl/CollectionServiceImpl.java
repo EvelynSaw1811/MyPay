@@ -108,6 +108,12 @@ public class CollectionServiceImpl implements CollectionService {
         if (!collection.getCollectionOwnerId().equals(userId)) {
             throw new ForbiddenException("Only the owner can close a collection");
         }
+        boolean hasUnsettledShares = expenseRepository.findByCollection(collection).stream()
+                .flatMap(e -> shareRepository.findByExpense(e).stream())
+                .anyMatch(s -> !Boolean.TRUE.equals(s.getExpenseShareSettled()));
+        if (hasUnsettledShares) {
+            throw new BadRequestException("All expenses must be settled before closing a collection");
+        }
         collection.setCollectionStatus(CollectionStatus.CLOSED);
         collectionRepository.save(collection);
     }
@@ -142,6 +148,25 @@ public class CollectionServiceImpl implements CollectionService {
         CollectionMember target = memberRepository.findByCollectionAndCollectionMemberUserId(collection, targetUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Member not found: " + targetUserId));
         memberRepository.delete(target);
+    }
+
+    @Override
+    @Transactional
+    public void leaveCollection(String collectionId, String userId) {
+        Collection collection = findCollection(collectionId);
+        if (userId.equals(collection.getCollectionOwnerId())) {
+            throw new BadRequestException("Collection owner cannot leave the collection");
+        }
+        CollectionMember member = memberRepository.findByCollectionAndCollectionMemberUserId(collection, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Member not found: " + userId));
+        boolean hasUnsettledShares = expenseRepository.findByCollection(collection).stream()
+                .anyMatch(e -> shareRepository.findByExpense(e).stream()
+                        .anyMatch(s -> !Boolean.TRUE.equals(s.getExpenseShareSettled())
+                                && (userId.equals(s.getExpenseShareUserId()) || userId.equals(e.getExpensePaidBy()))));
+        if (hasUnsettledShares) {
+            throw new BadRequestException("Please settle all expenses before leaving this collection");
+        }
+        memberRepository.delete(member);
     }
 
     @Override

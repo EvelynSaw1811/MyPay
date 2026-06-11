@@ -38,14 +38,14 @@ public class SeedDataInitializer implements ApplicationRunner {
     private static final String U4 = SeedUsers.U4;
     private static final String U5 = SeedUsers.U5;
     private static final String U6 = SeedUsers.U6;
-    private static final String U9 = SeedUsers.U9;
 
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
         if (txnRepo.existsById(SeedDataIds.TXN_TOPUP_ALICE_MYR)
                 || txnRepo.existsByTransactionIdempotencyKey(seedTopUpKey(U1, "MYR"))) {
-            log.info("[Seed] Deterministic transaction scenario already exists - skipping transaction seed.");
+            topUp(SeedDataIds.TXN_TOPUP_EMMA_MYR, U5, "MYR", bd(300));
+            log.info("[Seed] Deterministic transaction scenario already exists - backfilled Emma top-up if missing.");
             return;
         }
 
@@ -53,7 +53,7 @@ public class SeedDataInitializer implements ApplicationRunner {
         topUp(SeedDataIds.TXN_TOPUP_BOB_SGD, U2, "SGD", bd(1500));
         topUp(SeedDataIds.TXN_TOPUP_CAROL_MYR, U3, "MYR", bd(1000));
         topUp(SeedDataIds.TXN_TOPUP_FRANK_SGD, U6, "SGD", bd(500));
-        topUp(SeedDataIds.TXN_TOPUP_IVY_MYR, U9, "MYR", bd(300));
+        topUp(SeedDataIds.TXN_TOPUP_EMMA_MYR, U5, "MYR", bd(300));
 
         settle(SeedDataIds.TXN_SETTLE_CAROL_ALICE, U3, U1, "MYR", bd(300), "MYR", bd(300),
                 SeedDataIds.C1_BALI_TRIP, SeedDataIds.S_E1_CAROL, TransactionStatus.COMPLETED, "COMPLETED", 7, null);

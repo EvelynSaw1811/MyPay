@@ -70,6 +70,14 @@ public class CollectionController {
         return ResponseEntity.ok(ApiResponse.success("Member removed", null));
     }
 
+    @DeleteMapping("/{collectionId}/members/me")
+    @RequireCollectionRole(CollectionRole.MEMBER)
+    public ResponseEntity<ApiResponse<Void>> leaveCollection(
+            @PathVariable String collectionId) {
+        collectionService.leaveCollection(collectionId, RequestContextHolder.currentUserId());
+        return ResponseEntity.ok(ApiResponse.success("Collection removed from your list", null));
+    }
+
     @GetMapping("/{collectionId}/balances")
     @RequireCollectionRole(CollectionRole.MEMBER)
     public ResponseEntity<ApiResponse<List<BalanceSummaryResponse>>> getBalances(

@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -71,6 +72,14 @@ public class InvitationServiceImpl implements InvitationService {
         invitation = invitationRepository.save(invitation);
 
         notificationPublisher.publishInvitationReceived(NotificationEvent.builder()
+                .userId(inviterId)
+                .type("INVITATION_SENT")
+                .title("Invitation sent")
+                .message("You invited a user to " + collection.getCollectionName() + " as " + request.getRole())
+                .referenceId(invitation.getInvitationId())
+                .build());
+
+        notificationPublisher.publishInvitationReceived(NotificationEvent.builder()
                 .userId(inviteeUserId)
                 .type("INVITATION_RECEIVED")
                 .title("Collection invitation")
@@ -78,21 +87,21 @@ public class InvitationServiceImpl implements InvitationService {
                 .referenceId(invitation.getInvitationId())
                 .build());
 
-        return invitationMapper.toResponse(invitation);
+        return toResponseWithInviteeCode(invitation);
     }
 
     @Override
     public List<InvitationResponse> getCollectionInvitations(String collectionId) {
         Collection collection = findCollection(collectionId);
         return invitationRepository.findByCollection(collection).stream()
-                .map(invitationMapper::toResponse)
+                .map(this::toResponseWithInviteeCode)
                 .toList();
     }
 
     @Override
     public List<InvitationResponse> getMyInvitations(String userId) {
         return invitationRepository.findByInvitationInviteeAndInvitationStatus(userId, InvitationStatus.PENDING).stream()
-                .map(invitationMapper::toResponse)
+                .map(this::toResponseWithInviteeCode)
                 .toList();
     }
 
@@ -110,7 +119,8 @@ public class InvitationServiceImpl implements InvitationService {
             throw new ConflictException("Invitation already responded to");
         }
 
-        if ("ACCEPT".equals(request.getAction())) {
+        boolean accepted = "ACCEPT".equals(request.getAction());
+        if (accepted) {
             invitation.setInvitationStatus(InvitationStatus.ACCEPTED);
             CollectionMember member = CollectionMember.builder()
                     .collection(invitation.getCollection())
@@ -122,7 +132,9 @@ public class InvitationServiceImpl implements InvitationService {
             invitation.setInvitationStatus(InvitationStatus.DECLINED);
         }
 
-        return invitationMapper.toResponse(invitationRepository.save(invitation));
+        Invitation saved = invitationRepository.save(invitation);
+        publishInvitationResponse(saved, accepted);
+        return toResponseWithInviteeCode(saved);
     }
 
     private Collection findCollection(String collectionId) {
@@ -139,5 +151,67 @@ public class InvitationServiceImpl implements InvitationService {
             throw new ResourceNotFoundException("User not found: " + identifier);
         }
         return response.getData().get("userId").toString();
+    }
+
+    private InvitationResponse toResponseWithInviteeCode(Invitation invitation) {
+        InvitationResponse response = invitationMapper.toResponse(invitation);
+        response.setInviteeInvitationCode(resolveInvitationCode(invitation.getInvitationInvitee()));
+        response.setInviterName(resolveDisplayName(invitation.getInvitationInviter()));
+        return response;
+    }
+
+    private String resolveInvitationCode(String userId) {
+        Map<String, Object> info = resolveUserInfo(userId);
+        Object code = info == null ? null : info.get("invitationCode");
+        return code == null ? null : code.toString();
+    }
+
+    private Map<String, Object> resolveUserInfo(String userId) {
+        if (userId == null || userId.isBlank()) {
+            return null;
+        }
+        try {
+            var response = authClient.resolveUser(userId);
+            return response == null ? null : response.getData();
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private String resolveDisplayName(String userId) {
+        Map<String, Object> info = resolveUserInfo(userId);
+        if (info == null) {
+            return userId;
+        }
+        Object nickname = info.get("userNickname");
+        if (nickname != null && !nickname.toString().isBlank()) {
+            return nickname.toString();
+        }
+        Object firstName = info.get("firstName");
+        Object lastName = info.get("lastName");
+        String name = ((firstName == null ? "" : firstName.toString()) + " " +
+                (lastName == null ? "" : lastName.toString())).trim();
+        return name.isBlank() ? userId : name;
+    }
+
+    private void publishInvitationResponse(Invitation invitation, boolean accepted) {
+        String code = resolveInvitationCode(invitation.getInvitationInvitee());
+        String actor = code == null || code.isBlank() ? "The invited user" : code;
+        String action = accepted ? "accepted" : "rejected";
+        String inviterName = resolveDisplayName(invitation.getInvitationInviter());
+        notificationPublisher.publishInvitationReceived(NotificationEvent.builder()
+                .userId(invitation.getInvitationInvitee())
+                .type(accepted ? "INVITATION_ACCEPTED_CONFIRMATION" : "INVITATION_DECLINED_CONFIRMATION")
+                .title(accepted ? "Invitation accepted" : "Invitation rejected")
+                .message("You " + action + " " + inviterName + "'s invitation to " + invitation.getCollection().getCollectionName())
+                .referenceId(invitation.getInvitationId())
+                .build());
+        notificationPublisher.publishInvitationReceived(NotificationEvent.builder()
+                .userId(invitation.getInvitationInviter())
+                .type(accepted ? "INVITATION_ACCEPTED" : "INVITATION_REJECTED")
+                .title(accepted ? "Invitation accepted" : "Invitation rejected")
+                .message(actor + " " + action + " your invitation to " + invitation.getCollection().getCollectionName())
+                .referenceId(invitation.getInvitationId())
+                .build());
     }
 }

@@ -51,8 +51,6 @@ public class SeedDataInitializer implements ApplicationRunner {
     private static final String U4 = SeedUsers.U4;
     private static final String U5 = SeedUsers.U5;
     private static final String U6 = SeedUsers.U6;
-    private static final String U8 = SeedUsers.U8;
-    private static final String U9 = SeedUsers.U9;
 
     private static final LocalDateTime NOW = LocalDateTime.now();
 
@@ -70,6 +68,8 @@ public class SeedDataInitializer implements ApplicationRunner {
         if (!collectionRepo.existsById(SeedDataIds.C9_LONG_NAME)) seedLongNameCollection();
         if (!collectionRepo.existsById(SeedDataIds.C10_ALL_SETTLED)) seedAllSettledCollection();
         if (!collectionRepo.existsById(SeedDataIds.C11_MULTI_INVITE)) seedMultiInviteCollection();
+        backfillExistingSeedDrift();
+        backfillClosedCollectionSettlements();
         seedInvitations();
 
         log.info("[Seed] Created or backfilled deterministic collections, expenses, invitations, shares, and split rules.");
@@ -85,7 +85,7 @@ public class SeedDataInitializer implements ApplicationRunner {
         saveMember(c, U4, CollectionRole.MEMBER);
 
         Expense e1 = saveExpense(SeedDataIds.E1_HOTEL_BOOKING, c, "Hotel Booking", bd(1200), "MYR", U1, SplitType.EQUAL, null, null);
-        saveShare(e1, U1, bd(300), bd(300), true, NOW.minusDays(10));
+        saveShare(e1, U1, bd(300), bd(300), true, null);
         saveShare(e1, U2, bd(300), bd(300), false, null);
         saveShare(SeedDataIds.S_E1_CAROL, e1, U3, bd(300), bd(300), true, NOW.minusDays(8));
         saveShare(SeedDataIds.S_E1_DAVID, e1, U4, bd(300), bd(300), false, null);
@@ -96,7 +96,7 @@ public class SeedDataInitializer implements ApplicationRunner {
         saveSplitRule(e2, U3, bd(30), null, null);
         saveSplitRule(e2, U4, bd(20), null, null);
         saveShare(e2, U1, bd(720), bd(720), false, null);
-        saveShare(e2, U2, bd(480), bd(480), true, NOW.minusDays(12));
+        saveShare(e2, U2, bd(480), bd(480), true, null);
         saveShare(SeedDataIds.S_E2_CAROL, e2, U3, bd(720), bd(720), true, NOW.minusDays(7));
         saveShare(e2, U4, bd(480), bd(480), false, null);
 
@@ -108,7 +108,7 @@ public class SeedDataInitializer implements ApplicationRunner {
         saveShare(SeedDataIds.S_E7_ALICE, e7, U1, bd(150), bd(150), false, null);
         saveShare(e7, U2, bd(150), bd(150), false, null);
         saveShare(e7, U3, bd(150), bd(150), false, null);
-        saveShare(e7, U4, bd(150), bd(150), true, NOW.minusDays(12));
+        saveShare(e7, U4, bd(150), bd(150), true, null);
     }
 
     private void seedOfficeLunch() {
@@ -120,7 +120,7 @@ public class SeedDataInitializer implements ApplicationRunner {
         saveMember(c, U5, CollectionRole.MEMBER);
 
         Expense e3 = saveExpense(SeedDataIds.E3_TEAM_LUNCH, c, "Team Lunch", bd(300), "MYR", U2, SplitType.EQUAL, null, null);
-        saveShare(e3, U2, bd(100), bd(100), true, NOW.minusDays(5));
+        saveShare(e3, U2, bd(100), bd(100), true, null);
         saveShare(e3, U3, bd(100), bd(100), false, null);
         saveShare(SeedDataIds.S_E3_EMMA, e3, U5, bd(100), bd(100), true, NOW.minusDays(3));
     }
@@ -140,7 +140,7 @@ public class SeedDataInitializer implements ApplicationRunner {
         saveSplitRule(e4, U6, null, bd(30), null);
         saveShare(e4, U2, bd(40), bd(40), false, null);
         saveShare(SeedDataIds.S_E4_DAVID, e4, U4, bd(50), bd(50), true, NOW.minusDays(2));
-        saveShare(e4, U6, bd(30), bd(30), true, NOW.minusDays(14));
+        saveShare(e4, U6, bd(30), bd(30), true, null);
     }
 
     private void seedTeamBuilding() {
@@ -159,13 +159,13 @@ public class SeedDataInitializer implements ApplicationRunner {
         saveSplitRule(e5, U1, null, bd(100), null);
         saveSplitRule(e5, U2, null, null, 1);
         saveSplitRule(e5, U4, null, null, 1);
-        saveShare(e5, U3, bd(200), bd(200), true, NOW.minusDays(20));
+        saveShare(e5, U3, bd(200), bd(200), true, null);
         saveShare(e5, U1, bd(100), bd(100), false, null);
         saveShare(e5, U2, bd(75), bd(75), false, null);
         saveShare(e5, U4, bd(75), bd(75), false, null);
 
-        Expense e8 = saveExpense(SeedDataIds.E8_TAXED_CATERING, c, "Catered Dinner", bd(300), "MYR", U1, SplitType.EQUAL, bd(0.06), "SIMPLE");
-        saveShare(e8, U1, bd(50), bd(53), true, NOW.minusDays(2));
+        Expense e8 = saveExpense(SeedDataIds.E8_TAXED_CATERING, c, "Catered Dinner", bd(318), "MYR", U1, SplitType.EQUAL, bd(0.06), "SIMPLE");
+        saveShare(e8, U1, bd(50), bd(53), true, null);
         saveShare(e8, U2, bd(50), bd(53), false, null);
         saveShare(e8, U3, bd(50), bd(53), false, null);
         saveShare(e8, U4, bd(50), bd(53), false, null);
@@ -174,7 +174,7 @@ public class SeedDataInitializer implements ApplicationRunner {
 
         Expense e9 = saveExpense(SeedDataIds.E9_ROUNDING_SNACKS, c, "Snacks and Drinks", bd(100), "MYR", U2, SplitType.EQUAL, null, null);
         saveShare(e9, U1, bd(33.34), bd(33.34), false, null);
-        saveShare(e9, U2, bd(33.33), bd(33.33), true, NOW.minusDays(1));
+        saveShare(e9, U2, bd(33.33), bd(33.33), true, null);
         saveShare(e9, U3, bd(33.33), bd(33.33), false, null);
     }
 
@@ -190,7 +190,7 @@ public class SeedDataInitializer implements ApplicationRunner {
         saveSplitRule(e6, U4, null, null, 4);
         saveSplitRule(e6, U5, null, null, 3);
         saveSplitRule(e6, U6, null, null, 2);
-        saveShare(e6, U4, bd(80), bd(80), true, NOW.minusDays(30));
+        saveShare(e6, U4, bd(80), bd(80), true, null);
         saveShare(e6, U5, bd(60), bd(60), false, null);
         saveShare(SeedDataIds.S_E6_FRANK, e6, U6, bd(40), bd(40), false, null);
     }
@@ -204,25 +204,25 @@ public class SeedDataInitializer implements ApplicationRunner {
         saveMember(c, U6, CollectionRole.MEMBER);
 
         Expense e10 = saveExpense(SeedDataIds.E10_CLOSED_MOVIE_TICKETS, c, "Movie Tickets", bd(90), "MYR", U5, SplitType.EQUAL, null, null);
-        saveShare(e10, U5, bd(30), bd(30), true, NOW.minusDays(25));
+        saveShare(e10, U5, bd(30), bd(30), true, null);
         saveShare(e10, U1, bd(30), bd(30), true, NOW.minusDays(24));
-        saveShare(e10, U6, bd(30), bd(30), false, null);
+        saveShare(e10, U6, bd(30), bd(30), true, NOW.minusDays(23));
     }
 
     private void seedEmptyCollection() {
         Collection c = saveCollection(SeedDataIds.C7_EMPTY_COLLECTION, "Empty Planning Collection",
-                "Active monthly collection with members but no expenses for empty-state testing", CollectionCategory.MONTHLY, "MYR", U8, CollectionStatus.ACTIVE);
-        saveMember(c, U8, CollectionRole.ADMIN);
+                "Active monthly collection with members but no expenses for empty-state testing", CollectionCategory.MONTHLY, "MYR", U5, CollectionStatus.ACTIVE);
+        saveMember(c, U5, CollectionRole.ADMIN);
         saveMember(c, U1, CollectionRole.MEMBER);
     }
 
     private void seedSingleMemberCollection() {
         Collection c = saveCollection(SeedDataIds.C8_SINGLE_MEMBER, "Solo Coffee Run",
-                "Single-member collection for no-debt split behavior", CollectionCategory.EXPENSE, "MYR", U9, CollectionStatus.ACTIVE);
-        saveMember(c, U9, CollectionRole.ADMIN);
+                "Single-member collection for no-debt split behavior", CollectionCategory.EXPENSE, "MYR", U6, CollectionStatus.ACTIVE);
+        saveMember(c, U6, CollectionRole.ADMIN);
 
-        Expense e11 = saveExpense(SeedDataIds.E11_SINGLE_MEMBER_COFFEE, c, "Coffee", bd(12.50), "MYR", U9, SplitType.EQUAL, null, null);
-        saveShare(e11, U9, bd(12.50), bd(12.50), true, NOW.minusDays(1));
+        Expense e11 = saveExpense(SeedDataIds.E11_SINGLE_MEMBER_COFFEE, c, "Coffee", bd(12.50), "MYR", U6, SplitType.EQUAL, null, null);
+        saveShare(e11, U6, bd(12.50), bd(12.50), true, null);
     }
 
     private void seedLongNameCollection() {
@@ -235,8 +235,8 @@ public class SeedDataInitializer implements ApplicationRunner {
         saveMember(c, U3, CollectionRole.MEMBER);
 
         Expense e12 = saveExpense(SeedDataIds.E12_LONG_NAME_SUPPLIES, c,
-                "Workshop Supplies With A Deliberately Long Expense Description", bd(99.99), "MYR", U1, SplitType.EQUAL, null, null);
-        saveShare(e12, U1, bd(33.33), bd(33.33), true, NOW.minusDays(1));
+                "Workshop Supplies Long Case", bd(99.99), "MYR", U1, SplitType.EQUAL, null, null);
+        saveShare(e12, U1, bd(33.33), bd(33.33), true, null);
         saveShare(e12, U2, bd(33.33), bd(33.33), false, null);
         saveShare(e12, U3, bd(33.33), bd(33.33), false, null);
     }
@@ -249,7 +249,7 @@ public class SeedDataInitializer implements ApplicationRunner {
         saveMember(c, U2, CollectionRole.MEMBER);
 
         Expense e13 = saveExpense(SeedDataIds.E13_ALL_SETTLED_MEAL, c, "Fuel and Toll", bd(240), "MYR", U1, SplitType.EQUAL, null, null);
-        saveShare(e13, U1, bd(120), bd(120), true, NOW.minusDays(3));
+        saveShare(e13, U1, bd(120), bd(120), true, null);
         saveShare(e13, U2, bd(120), bd(120), true, NOW.minusDays(2));
     }
 
@@ -262,15 +262,71 @@ public class SeedDataInitializer implements ApplicationRunner {
 
     private void seedInvitations() {
         Collection bali = collectionRepo.getReferenceById(SeedDataIds.C1_BALI_TRIP);
+        Collection officeLunch = collectionRepo.getReferenceById(SeedDataIds.C2_OFFICE_LUNCH);
         Collection sgWeekend = collectionRepo.getReferenceById(SeedDataIds.C3_SG_WEEKEND);
         Collection holidayDinner = collectionRepo.getReferenceById(SeedDataIds.C5_HOLIDAY_DINNER);
+        Collection emptyPlanning = collectionRepo.getReferenceById(SeedDataIds.C7_EMPTY_COLLECTION);
+        Collection soloCoffee = collectionRepo.getReferenceById(SeedDataIds.C8_SINGLE_MEMBER);
+        Collection longName = collectionRepo.getReferenceById(SeedDataIds.C9_LONG_NAME);
+        Collection budgetRoadTrip = collectionRepo.getReferenceById(SeedDataIds.C10_ALL_SETTLED);
         Collection flatShare = collectionRepo.getReferenceById(SeedDataIds.C11_MULTI_INVITE);
 
         saveInvitationIfMissing(SeedDataIds.INV_PENDING_FRANK, bali, U1, U6, CollectionRole.MEMBER, InvitationStatus.PENDING);
         saveInvitationIfMissing(SeedDataIds.INV_ACCEPTED_ALICE, sgWeekend, U2, U1, CollectionRole.MEMBER, InvitationStatus.ACCEPTED);
         saveInvitationIfMissing(SeedDataIds.INV_DECLINED_CAROL, holidayDinner, U4, U3, CollectionRole.MEMBER, InvitationStatus.DECLINED);
-        saveInvitationIfMissing(SeedDataIds.INV_PENDING_IVY_C11, flatShare, U1, U9, CollectionRole.MEMBER, InvitationStatus.PENDING);
+        saveInvitationIfMissing(SeedDataIds.INV_PENDING_EMMA_C11, flatShare, U1, U5, CollectionRole.MEMBER, InvitationStatus.PENDING);
         saveInvitationIfMissing(SeedDataIds.INV_PENDING_DAVID_C11, flatShare, U1, U4, CollectionRole.EDITOR, InvitationStatus.PENDING);
+        saveInvitationIfMissing(SeedDataIds.INV_PENDING_BOB_C7, emptyPlanning, U5, U2, CollectionRole.MEMBER, InvitationStatus.PENDING);
+        saveInvitationIfMissing(SeedDataIds.INV_PENDING_CAROL_C7, emptyPlanning, U5, U3, CollectionRole.EDITOR, InvitationStatus.PENDING);
+        saveInvitationIfMissing(SeedDataIds.INV_PENDING_DAVID_C7, emptyPlanning, U5, U4, CollectionRole.MEMBER, InvitationStatus.PENDING);
+        saveInvitationIfMissing(SeedDataIds.INV_PENDING_FRANK_C7, emptyPlanning, U5, U6, CollectionRole.MEMBER, InvitationStatus.PENDING);
+        saveInvitationIfMissing(SeedDataIds.INV_PENDING_ALICE_C8, soloCoffee, U6, U1, CollectionRole.MEMBER, InvitationStatus.PENDING);
+        saveInvitationIfMissing(SeedDataIds.INV_PENDING_BOB_C8, soloCoffee, U6, U2, CollectionRole.EDITOR, InvitationStatus.PENDING);
+        saveInvitationIfMissing(SeedDataIds.INV_PENDING_CAROL_C8, soloCoffee, U6, U3, CollectionRole.MEMBER, InvitationStatus.PENDING);
+        saveInvitationIfMissing(SeedDataIds.INV_PENDING_DAVID_C8, soloCoffee, U6, U4, CollectionRole.MEMBER, InvitationStatus.PENDING);
+        saveInvitationIfMissing(SeedDataIds.INV_PENDING_EMMA_C1, bali, U1, U5, CollectionRole.MEMBER, InvitationStatus.PENDING);
+        saveInvitationIfMissing(SeedDataIds.INV_PENDING_FRANK_C2, officeLunch, U2, U6, CollectionRole.MEMBER, InvitationStatus.PENDING);
+        saveInvitationIfMissing(SeedDataIds.INV_PENDING_EMMA_C3, sgWeekend, U2, U5, CollectionRole.MEMBER, InvitationStatus.PENDING);
+        saveInvitationIfMissing(SeedDataIds.INV_PENDING_ALICE_C5, holidayDinner, U4, U1, CollectionRole.MEMBER, InvitationStatus.PENDING);
+        saveInvitationIfMissing(SeedDataIds.INV_PENDING_EMMA_C8, soloCoffee, U6, U5, CollectionRole.MEMBER, InvitationStatus.PENDING);
+        saveInvitationIfMissing(SeedDataIds.INV_PENDING_FRANK_C9, longName, U1, U6, CollectionRole.MEMBER, InvitationStatus.PENDING);
+        saveInvitationIfMissing(SeedDataIds.INV_DECLINED_DAVID_C2, officeLunch, U2, U4, CollectionRole.MEMBER, InvitationStatus.DECLINED);
+        saveInvitationIfMissing(SeedDataIds.INV_DECLINED_CAROL_C3, sgWeekend, U2, U3, CollectionRole.MEMBER, InvitationStatus.DECLINED);
+        saveInvitationIfMissing(SeedDataIds.INV_DECLINED_BOB_C5, holidayDinner, U4, U2, CollectionRole.MEMBER, InvitationStatus.DECLINED);
+        saveInvitationIfMissing(SeedDataIds.INV_DECLINED_DAVID_C9, longName, U1, U4, CollectionRole.EDITOR, InvitationStatus.DECLINED);
+        saveInvitationIfMissing(SeedDataIds.INV_DECLINED_EMMA_C10, budgetRoadTrip, U1, U5, CollectionRole.MEMBER, InvitationStatus.DECLINED);
+        saveInvitationIfMissing(SeedDataIds.INV_DECLINED_FRANK_C11, flatShare, U1, U6, CollectionRole.MEMBER, InvitationStatus.DECLINED);
+    }
+
+    private void backfillClosedCollectionSettlements() {
+        expenseRepo.findById(SeedDataIds.E10_CLOSED_MOVIE_TICKETS).ifPresent(expense -> {
+            for (ExpenseShare share : shareRepo.findByExpense(expense)) {
+                if (!Boolean.TRUE.equals(share.getExpenseShareSettled())) {
+                    share.setExpenseShareSettled(true);
+                    share.setExpenseShareSettledDateTime(NOW.minusDays(23));
+                    shareRepo.save(share);
+                }
+            }
+        });
+    }
+
+    private void backfillExistingSeedDrift() {
+        expenseRepo.findById(SeedDataIds.E8_TAXED_CATERING).ifPresent(expense -> {
+            if (expense.getExpenseAmount() == null || expense.getExpenseAmount().compareTo(bd(318)) != 0) {
+                expense.setExpenseAmount(bd(318));
+                expenseRepo.save(expense);
+            }
+        });
+
+        if (!expenseRepo.existsById(SeedDataIds.E12_LONG_NAME_SUPPLIES)) {
+            collectionRepo.findById(SeedDataIds.C9_LONG_NAME).ifPresent(collection -> {
+                Expense e12 = saveExpense(SeedDataIds.E12_LONG_NAME_SUPPLIES, collection,
+                        "Workshop Supplies Long Case", bd(99.99), "MYR", U1, SplitType.EQUAL, null, null);
+                saveShare(e12, U1, bd(33.33), bd(33.33), true, null);
+                saveShare(e12, U2, bd(33.33), bd(33.33), false, null);
+                saveShare(e12, U3, bd(33.33), bd(33.33), false, null);
+            });
+        }
     }
 
     private Collection saveCollection(String id, String name, String desc, CollectionCategory category,
@@ -288,7 +344,7 @@ public class SeedDataInitializer implements ApplicationRunner {
     }
 
     private void seedCollectionTypes() {
-        for (String userId : new String[]{U1, U2, U3, U4, U5, U6, U8, U9}) {
+        for (String userId : new String[]{U1, U2, U3, U4, U5, U6}) {
             saveUserType(userId, "Trip", true);
             saveUserType(userId, "Expense", true);
             saveUserType(userId, "Monthly", true);

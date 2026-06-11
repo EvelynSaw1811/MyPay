@@ -59,8 +59,9 @@ public class ExpenseController {
     @DeleteMapping("/{expenseId}")
     public ResponseEntity<ApiResponse<Void>> deleteExpense(
             @PathVariable String collectionId,
-            @PathVariable String expenseId) {
-        expenseService.deleteExpense(collectionId, expenseId, RequestContextHolder.currentUserId());
+            @PathVariable String expenseId,
+            @RequestParam(defaultValue = "false") boolean waiveSettlements) {
+        expenseService.deleteExpense(collectionId, expenseId, RequestContextHolder.currentUserId(), waiveSettlements);
         return ResponseEntity.ok(ApiResponse.success("Expense deleted", null));
     }
 

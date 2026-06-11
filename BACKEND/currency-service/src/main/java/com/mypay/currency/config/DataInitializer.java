@@ -2,12 +2,12 @@ package com.mypay.currency.config;
 
 import com.mypay.common.constant.SeedDataIds;
 import com.mypay.currency.entity.Currency;
-import com.mypay.currency.entity.ExchangeRate;
 import com.mypay.currency.repository.CurrencyRepository;
 import com.mypay.currency.repository.ExchangeRateRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -20,6 +20,7 @@ public class DataInitializer implements CommandLineRunner {
 
     private final CurrencyRepository currencyRepository;
     private final ExchangeRateRepository exchangeRateRepository;
+    private final JdbcTemplate jdbc;
 
     @Override
     public void run(String... args) {
@@ -56,12 +57,13 @@ public class DataInitializer implements CommandLineRunner {
         if (exchangeRateRepository.existsById(id)) {
             return;
         }
-        exchangeRateRepository.save(ExchangeRate.builder()
-                .exchangeRateId(id)
-                .exchangeRateBaseCurrency(base)
-                .exchangeRateTargetCurrency(target)
-                .exchangeRateValue(new BigDecimal(value))
-                .exchangeRateFetchedDateTime(fetchedAt)
-                .build());
+        jdbc.update("""
+                INSERT INTO exchange_rate_t
+                  (exrt_id, exrt_base, exrt_target, exrt_rate, exrt_fetched)
+                SELECT ?, ?, ?, ?, ?
+                 WHERE NOT EXISTS (
+                       SELECT 1 FROM exchange_rate_t WHERE exrt_id = ?
+                 )
+                """, id, base, target, new BigDecimal(value), fetchedAt, id);
     }
 }

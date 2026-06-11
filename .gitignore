@@ -34,3 +34,12 @@ build/
 
 ### Claude Code ###
 .claude/
+
+### Environment / secrets — never commit these ###
+.env
+.env.production
+.env.local
+
+### Analysis, planning, and thesis documents — local only ###
+PROJECT_INFORMATION/
+chapter4/

@@ -12,6 +12,7 @@ public class InvitationMapper {
                 .invitationId(invitation.getInvitationId())
                 .collectionId(invitation.getCollection().getCollectionId())
                 .collectionName(invitation.getCollection().getCollectionName())
+                .collectionCurrency(invitation.getCollection().getCollectionCurrency())
                 .inviterId(invitation.getInvitationInviter())
                 .inviteeId(invitation.getInvitationInvitee())
                 .role(invitation.getInvitationRole())
