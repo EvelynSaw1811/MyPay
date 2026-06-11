@@ -10,7 +10,7 @@ import ExpenseShareBreakdown from '../../components/collection/ExpenseShareBreak
 import SettlementModal from '../../components/transaction/SettlementModal'
 import { formatAmount } from '../../utils/currency'
 import { formatDate } from '../../utils/date'
-import { getExpense, removeExpense } from '../../api/expense'
+import { getExpense, removeExpense, sendSettlementReminder } from '../../api/expense'
 import { getMembers } from '../../api/collection'
 import { getWallet } from '../../api/wallet'
 import { getApiErrorMessage } from '../../utils/apiError'
@@ -22,6 +22,7 @@ export default function ExpenseDetailPage() {
   const { user } = useAuth()
   const [settleOpen, setSettleOpen] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+  const [reminderMessage, setReminderMessage] = useState('')
 
   const { data: expData, isLoading } = useQuery({
     queryKey: ['expense', id, eid],
@@ -61,6 +62,14 @@ export default function ExpenseDetailPage() {
     : myShare && !myShare.settled
       ? Number(myShare.totalAmount ?? 0)
       : 0
+  const reminderTargets = (expense?.shares ?? []).filter((share) =>
+    share.userId !== expense?.paidBy &&
+    !share.settled &&
+    Number(share.totalAmount ?? 0) > 0
+  )
+  const canSendSettlementReminder =
+    reminderTargets.length > 0 &&
+    (expense?.paidBy === currentUserId || expense?.createdBy === currentUserId)
 
   const deleteMut = useMutation({
     mutationFn: (options) => removeExpense(id, eid, options),
@@ -69,6 +78,17 @@ export default function ExpenseDetailPage() {
       navigate(`/app/collections/${id}`)
     },
     onError: (error) => setDeleteError(getApiErrorMessage(error, 'Failed to delete expense')),
+  })
+
+  const reminderMut = useMutation({
+    mutationFn: () => sendSettlementReminder(id, eid),
+    onSuccess: (data) => {
+      const sent = data?.sent ?? reminderTargets.length
+      setReminderMessage(`Reminder sent to ${sent} member${sent === 1 ? '' : 's'}.`)
+      qc.invalidateQueries({ queryKey: ['notifications'] })
+      qc.invalidateQueries({ queryKey: ['notificationCount'] })
+    },
+    onError: (error) => setReminderMessage(getApiErrorMessage(error, 'Failed to send reminder')),
   })
 
   function handleDeleteExpense() {
@@ -129,15 +149,33 @@ export default function ExpenseDetailPage() {
             <p className="text-xl font-bold text-amber-900">{formatAmount(Math.abs(myExpensePosition), expense?.currency)}</p>
             <Button
               className="w-full mt-3"
-              onClick={() => myExpensePosition > 0 && setSettleOpen(true)}
-              disabled={myExpensePosition <= 0 || !hasSettlementWallet}
+              loading={myExpensePosition < 0 && reminderMut.isPending}
+              onClick={() => {
+                setReminderMessage('')
+                if (myExpensePosition > 0) {
+                  setSettleOpen(true)
+                  return
+                }
+                if (canSendSettlementReminder) {
+                  reminderMut.mutate()
+                }
+              }}
+              disabled={myExpensePosition > 0 ? !hasSettlementWallet : !canSendSettlementReminder}
             >
               {myExpensePosition < 0 ? 'Settle my share - Receive Money' : 'Settle my share - Pay Money'}
             </Button>
+            {myExpensePosition < 0 && (
+              <p className="mt-2 text-xs text-amber-700">
+                Sends a settlement reminder to unsettled expense members except the payer.
+              </p>
+            )}
             {myExpensePosition > 0 && !hasSettlementWallet && (
               <p className="mt-2 text-xs text-amber-700">
                 Open an active {expense?.currency} wallet before settling this expense.
               </p>
+            )}
+            {reminderMessage && (
+              <p className="mt-2 text-xs text-amber-700">{reminderMessage}</p>
             )}
           </div>
         )}

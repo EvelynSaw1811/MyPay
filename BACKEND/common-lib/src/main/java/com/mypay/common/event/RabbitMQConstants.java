@@ -17,6 +17,7 @@ public final class RabbitMQConstants {
 
     public static final String ROUTING_SETTLEMENT_RECEIVED  = "notification.settlement.received";
     public static final String ROUTING_SETTLEMENT_CONFIRMED = "notification.settlement.confirmed";
+    public static final String ROUTING_SETTLEMENT_REMINDER  = "notification.settlement.reminder";
     public static final String ROUTING_EXPENSE_CREATED      = "notification.expense.created";
     public static final String ROUTING_INVITATION_RECEIVED  = "notification.invitation.received";
 

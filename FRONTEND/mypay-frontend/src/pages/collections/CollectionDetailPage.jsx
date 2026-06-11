@@ -489,7 +489,7 @@ export default function CollectionDetailPage() {
             </div>
 
             {/* + New Expense — hidden in settle mode */}
-            {!settleMode && myMembership && col?.status === 'ACTIVE' && (
+            {!settleMode && canEdit && col?.status === 'ACTIVE' && (
               <Button className="mb-3 w-full" onClick={() => setShowExpenseModal(true)}>
                 + New Expense
               </Button>

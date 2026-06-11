@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/collections/{collectionId}/expenses")
@@ -72,6 +73,15 @@ public class ExpenseController {
             @PathVariable String expenseId,
             @PathVariable String shareId) {
         return ResponseEntity.ok(ApiResponse.success(expenseService.getShare(collectionId, expenseId, shareId)));
+    }
+
+    @PostMapping("/{expenseId}/reminders")
+    @RequireCollectionRole(CollectionRole.MEMBER)
+    public ResponseEntity<ApiResponse<Map<String, Integer>>> sendSettlementReminder(
+            @PathVariable String collectionId,
+            @PathVariable String expenseId) {
+        int sent = expenseService.sendSettlementReminder(collectionId, expenseId, RequestContextHolder.currentUserId());
+        return ResponseEntity.ok(ApiResponse.success("Settlement reminder sent", Map.of("sent", sent)));
     }
 
     @PutMapping("/{expenseId}/shares/{shareId}/settle")

@@ -22,6 +22,10 @@ public class NotificationEventPublisher {
         publish(event, RabbitMQConstants.ROUTING_INVITATION_RECEIVED);
     }
 
+    public void publishSettlementReminder(NotificationEvent event) {
+        publish(event, RabbitMQConstants.ROUTING_SETTLEMENT_REMINDER);
+    }
+
     private void publish(NotificationEvent event, String routingKey) {
         try {
             rabbitTemplate.convertAndSend(RabbitMQConstants.EXCHANGE, routingKey, event);

@@ -63,6 +63,8 @@ Closed collections must not contain unsettled expense shares. `Archived Movie Ni
 
 Expense seed shares are expected to add up to the stored expense total for the effective split total. Payer self-shares are seeded as settled with no settled timestamp, because the payer's own division is cleared immediately and should be visible in the collection `Me` tab but not in settlement history.
 
+Seed expenses record `createdBy` separately from `paidBy` so the payer and expense creator can both send settlement reminder notifications. Existing dev databases are backfilled with `createdBy = paidBy` for older seeded expenses that predate the column.
+
 `Catered Dinner` (`E8_TAXED_CATERING`) stores `318.00 MYR` as the expense total: six equal base shares of `50.00 MYR` plus `6%` simple tax produce six `53.00 MYR` post-tax shares.
 
 The collection-service seeder also backfills older dev databases where `E8_TAXED_CATERING` still has the previous `300.00 MYR` total, and inserts the long-name workshop expense (`E12_LONG_NAME_SUPPLIES`) when the long-name collection already exists without that expense.

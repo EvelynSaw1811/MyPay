@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import Input from '../../components/ui/Input'
 import Button from '../../components/ui/Button'
-import { getApiErrorMessage } from '../../utils/apiError'
+import { getApiError, getApiErrorMessage } from '../../utils/apiError'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -20,7 +20,12 @@ export default function LoginPage() {
       await login(form.email, form.password)
       navigate('/app/home', { replace: true })
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Invalid credentials'))
+      const apiError = getApiError(err, 'Invalid credentials')
+      if (err?.response?.status === 401 || apiError.code === 'UNAUTHORIZED') {
+        setError(apiError.message || 'Invalid credentials')
+      } else {
+        setError(getApiErrorMessage(err, 'Invalid credentials'))
+      }
     } finally {
       setLoading(false)
     }

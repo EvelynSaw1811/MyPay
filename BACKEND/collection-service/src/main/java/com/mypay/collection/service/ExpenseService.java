@@ -13,6 +13,7 @@ public interface ExpenseService {
     ExpenseResponse updateExpense(String collectionId, String expenseId, String userId, CreateExpenseRequest request);
     void deleteExpense(String collectionId, String expenseId, String userId, boolean waiveSettlements);
     ShareResponse getShare(String collectionId, String expenseId, String shareId);
+    int sendSettlementReminder(String collectionId, String expenseId, String userId);
     void settleShare(String collectionId, String expenseId, String shareId);
     void unsettleShare(String collectionId, String expenseId, String shareId);
 }

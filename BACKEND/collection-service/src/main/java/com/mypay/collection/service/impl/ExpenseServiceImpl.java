@@ -13,6 +13,7 @@ import com.mypay.common.constant.CollectionStatus;
 import com.mypay.common.event.NotificationEvent;
 import com.mypay.common.exception.BadRequestException;
 import com.mypay.common.exception.ConflictException;
+import com.mypay.common.exception.ForbiddenException;
 import com.mypay.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -63,6 +64,7 @@ public class ExpenseServiceImpl implements ExpenseService {
                 .expenseAmount(request.getAmount())
                 .expenseCurrency(request.getCurrency())
                 .expensePaidBy(request.getPaidBy())
+                .expenseCreatedBy(userId)
                 .expenseSplitType(request.getSplitType())
                 .expenseTaxRate(request.getTaxRate())
                 .expenseTaxType(request.getTaxType())
@@ -223,6 +225,45 @@ public class ExpenseServiceImpl implements ExpenseService {
         ExpenseShare share = shareRepository.findByExpenseShareIdAndExpense_ExpenseId(shareId, expenseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Share not found: " + shareId));
         return expenseMapper.toShareResponse(share);
+    }
+
+    @Override
+    public int sendSettlementReminder(String collectionId, String expenseId, String userId) {
+        Expense expense = findExpense(collectionId, expenseId);
+        String createdBy = expense.getExpenseCreatedBy() != null
+                ? expense.getExpenseCreatedBy()
+                : expense.getExpensePaidBy();
+
+        if (!userId.equals(expense.getExpensePaidBy()) && !userId.equals(createdBy)) {
+            throw new ForbiddenException("Only the expense creator or payer can send settlement reminders");
+        }
+
+        List<ExpenseShare> reminderShares = shareRepository.findByExpense(expense).stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getExpenseShareSettled()))
+                .filter(s -> !s.getExpenseShareUserId().equals(expense.getExpensePaidBy()))
+                .filter(s -> s.getExpenseShareTotalAmount() != null
+                        && s.getExpenseShareTotalAmount().compareTo(BigDecimal.ZERO) > 0)
+                .toList();
+
+        if (reminderShares.isEmpty()) {
+            throw new ConflictException("No unsettled member shares to remind");
+        }
+
+        String expenseName = expense.getExpenseTitle() != null
+                ? expense.getExpenseTitle()
+                : expense.getExpenseDescription();
+        for (ExpenseShare share : reminderShares) {
+            notificationPublisher.publishSettlementReminder(NotificationEvent.builder()
+                    .userId(share.getExpenseShareUserId())
+                    .type("SETTLEMENT_REMINDER")
+                    .title("Settlement reminder")
+                    .message("Please settle " + share.getExpenseShareTotalAmount() + " "
+                            + expense.getExpenseCurrency() + " for: " + expenseName)
+                    .referenceId(expense.getExpenseId())
+                    .build());
+        }
+
+        return reminderShares.size();
     }
 
     @Override

@@ -18,6 +18,7 @@ public class ExpenseResponse {
     private BigDecimal amount;
     private String currency;
     private String paidBy;
+    private String createdBy;
     private SplitType splitType;
     private BigDecimal taxRate;
     private String taxType;

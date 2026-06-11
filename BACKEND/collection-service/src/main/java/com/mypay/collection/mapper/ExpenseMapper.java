@@ -20,6 +20,7 @@ public class ExpenseMapper {
                 .amount(expense.getExpenseAmount())
                 .currency(expense.getExpenseCurrency())
                 .paidBy(expense.getExpensePaidBy())
+                .createdBy(expense.getExpenseCreatedBy() != null ? expense.getExpenseCreatedBy() : expense.getExpensePaidBy())
                 .splitType(expense.getExpenseSplitType())
                 .taxRate(expense.getExpenseTaxRate())
                 .taxType(expense.getExpenseTaxType())

@@ -327,6 +327,13 @@ public class SeedDataInitializer implements ApplicationRunner {
                 saveShare(e12, U3, bd(33.33), bd(33.33), false, null);
             });
         }
+
+        expenseRepo.findAll().forEach(expense -> {
+            if (expense.getExpenseCreatedBy() == null) {
+                expense.setExpenseCreatedBy(expense.getExpensePaidBy());
+                expenseRepo.save(expense);
+            }
+        });
     }
 
     private Collection saveCollection(String id, String name, String desc, CollectionCategory category,
@@ -387,6 +394,7 @@ public class SeedDataInitializer implements ApplicationRunner {
                 .expenseAmount(amount)
                 .expenseCurrency(currency)
                 .expensePaidBy(paidBy)
+                .expenseCreatedBy(paidBy)
                 .expenseSplitType(splitType)
                 .expenseTaxRate(taxRate)
                 .expenseTaxType(taxType)

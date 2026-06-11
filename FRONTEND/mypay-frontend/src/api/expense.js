@@ -7,6 +7,7 @@ export const expenseApi = {
   update:      (colId, expId, body)        => client.put(`/api/collections/${colId}/expenses/${expId}`, body).then(r => r.data.data),
   remove:      (colId, expId, options = {}) => client.delete(`/api/collections/${colId}/expenses/${expId}`, { params: options }),
   getShare:    (colId, expId, shareId)     => client.get(`/api/collections/${colId}/expenses/${expId}/shares/${shareId}`).then(r => r.data.data),
+  remind:      (colId, expId)              => client.post(`/api/collections/${colId}/expenses/${expId}/reminders`).then(r => r.data.data),
   settleShare: (colId, expId, shareId, body) => client.put(`/api/collections/${colId}/expenses/${expId}/shares/${shareId}/settle`, body),
 }
 
@@ -16,4 +17,5 @@ export const createExpense = (colId, body) => expenseApi.create(colId, body)
 export const updateExpense = (colId, expId, body) => expenseApi.update(colId, expId, body)
 export const removeExpense = (colId, expId, options) => expenseApi.remove(colId, expId, options)
 export const getShare      = (colId, expId, shareId) => expenseApi.getShare(colId, expId, shareId).then(data => ({ data }))
+export const sendSettlementReminder = (colId, expId) => expenseApi.remind(colId, expId)
 export const settleShare   = (colId, expId, shareId, body) => expenseApi.settleShare(colId, expId, shareId, body)

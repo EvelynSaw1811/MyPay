@@ -40,6 +40,9 @@ public class Expense {
     @Column(name = "exp_paid_by", columnDefinition = "CHAR(36)", nullable = false)
     private String expensePaidBy;
 
+    @Column(name = "exp_created_by", columnDefinition = "CHAR(36)")
+    private String expenseCreatedBy;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "exp_split_type", length = 20, nullable = false)
     private SplitType expenseSplitType;

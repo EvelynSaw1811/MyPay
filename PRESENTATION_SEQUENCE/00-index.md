@@ -21,6 +21,7 @@ Use these files as the speaking sequence for the investor presentation on 2026-0
 15. [Research-To-Demo Explanation Guide](15-research-to-demo-explanation-guide.md)
 16. [PPT Generation Prompt](16-ppt-generation-prompt.md)
 17. [Supervisor and Second Marker Question Prep](17-supervisor-second-marker-question-prep.md)
+18. [Presentation Reading Script](18-presentation-reading-script.md)
 
 ## Core Pitch In One Sentence
 
