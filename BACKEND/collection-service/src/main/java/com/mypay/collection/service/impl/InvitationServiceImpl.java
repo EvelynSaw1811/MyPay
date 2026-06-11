@@ -194,9 +194,18 @@ public class InvitationServiceImpl implements InvitationService {
         return name.isBlank() ? userId : name;
     }
 
+    private String resolveNickname(String userId) {
+        Map<String, Object> info = resolveUserInfo(userId);
+        if (info == null) {
+            return null;
+        }
+        Object nickname = info.get("userNickname");
+        return nickname == null || nickname.toString().isBlank() ? null : nickname.toString();
+    }
+
     private void publishInvitationResponse(Invitation invitation, boolean accepted) {
-        String code = resolveInvitationCode(invitation.getInvitationInvitee());
-        String actor = code == null || code.isBlank() ? "The invited user" : code;
+        String nickname = resolveNickname(invitation.getInvitationInvitee());
+        String actor = nickname == null || nickname.isBlank() ? "The invited user" : nickname;
         String action = accepted ? "accepted" : "rejected";
         String inviterName = resolveDisplayName(invitation.getInvitationInviter());
         notificationPublisher.publishInvitationReceived(NotificationEvent.builder()
