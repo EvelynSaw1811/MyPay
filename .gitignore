@@ -39,7 +39,3 @@ build/
 .env
 .env.production
 .env.local
-
-### Analysis, planning, and thesis documents — local only ###
-PROJECT_INFORMATION/
-chapter4/

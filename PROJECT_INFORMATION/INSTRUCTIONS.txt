@@ -1,0 +1,52 @@
+it is showing the below error
+check if carol really has invitationCode and account ID, and if they are actually passed to frontend and rendered properly
+
+Phone
++60111234003
+Invitation code
+(not available)
+Account ID
+(not available)
+User ID
+••••••••
+
+user.invitationCode
+
+ (undefined)
+wallet.accountId
+
+ (undefined)
+user (full)
+
+{
+  "userId": "00000003-0000-0000-0000-000000000003",
+  "email": "carol.wong@mypay.test",
+  "firstName": "Carol",
+  "lastName": "Wong",
+  "phone": "+60111234003",
+  "status": "ACTIVE"
+}
+wallet (full)
+
+{
+  "walletId": "e2e94b5c-ec5c-4df7-bc04-7f1afcf418af",
+  "userId": "00000003-0000-0000-0000-000000000003",
+  "accounts": [
+    {
+      "accountId": "735f6ed6-45db-4088-a9f8-4d217e007921",
+      "currency": "MYR",
+      "balance": 4200
+    },
+    {
+      "accountId": "b648a1a7-b1d8-4f7d-b956-fbdf8ea6111e",
+      "currency": "SGD",
+      "balance": 200
+    },
+    {
+      "accountId": "6678ecaf-4637-4d2d-bae7-a37c6c846573",
+      "currency": "USD",
+      "balance": 50
+    }
+  ],
+  "createdAt": "2026-05-09T15:01:06.018379"
+}
